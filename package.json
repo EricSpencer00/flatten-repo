@@ -21,7 +21,13 @@
         "title": "Flatten Project to TXT"
       }
     ]
-  },  
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/EricSpencer00/flatten-repo.git"
+  },
+  "bugs": "https://github.com/EricSpencer00/flatten-repo/issues",
+  "homepage": "https://github.com/EricSpencer00/flatten-repo#readme",
   "scripts": {
     "lint": "eslint .",
     "pretest": "npm run lint",
