@@ -3,7 +3,7 @@ name: Publish VS Code Extension
 on:
   push:
     tags:
-      - 'v*' # Only run on version tags (ex. v0.0.3)
+      - 'v*' # Only run on version tags like v0.0.3, v3, etc.
 
 jobs:
   publish:
@@ -23,7 +23,15 @@ jobs:
       - name: 🔐 Authenticate with VSCE token
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.VSCE_PAT }}" > ~/.npmrc
 
-      - name: 🚀 Package and publish extension
-        run: vsce publish
+      - name: 🚀 Package extension
+        run: vsce package
+
+      - name: ✅ Fake Publish (manual mode)
+        run: |
+          echo "Skipping publish to Marketplace (manual mode)"
+          if [[ "${{ secrets.FAIL_PUBLISH }}" == "true" ]]; then
+            echo "FAIL_PUBLISH is true — exiting with failure"
+            exit 1
+          fi
         env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          FAIL_PUBLISH: ${{ secrets.FAIL_PUBLISH }}

@@ -1,6 +1,8 @@
 
 # 📄 flatten-repo
 
+[![Publish Extension](https://github.com/EricSpencer00/flatten-repo/actions/workflows/publish.yml/badge.svg)](https://github.com/EricSpencer00/flatten-repo/actions/workflows/publish.yml)
+
 **Flatten your codebase into `.txt` files — perfect for LLM parsing, prompt engineering, or static analysis.**
 
 ---
