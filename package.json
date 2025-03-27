@@ -15,6 +15,28 @@
   ],  
   "main": "./extension.js",
   "contributes": {
+    "configuration":
+      {
+        "type": "object",
+        "title": "Flatten Repo",
+        "properties": {
+          "flattenRepo.includeExtensions": {
+            "type": "array",
+            "default": [".cpp", ".h", ".py", ".js", ".ts", ".java", ".html", ".css", ".json"],
+            "description": "File extensions to include when flattening."
+          },
+          "flattenRepo.ignoreDirs": {
+            "type": "array",
+            "default": ["node_modules", ".git"],
+            "description": "Directory names to ignore."
+          },
+          "flattenRepo.maxChunkSize": {
+            "type": "number",
+            "default": 20000,
+            "description": "Maximum number of characters per file chunk. Set 0 to disable chunking."
+          }
+        }
+      },
     "commands": [
       {
         "command": "flatten-repo.flattenProjectToTxt",
@@ -22,6 +44,7 @@
       }
     ]
   },
+  
   "repository": {
     "type": "git",
     "url": "https://github.com/EricSpencer00/flatten-repo.git"
