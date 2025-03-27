@@ -1,4 +1,5 @@
 {
+  "publisher": "EricSpencer",
   "name": "flatten-repo",
   "displayName": "flatten-repo",
   "description": "Flattens codebase into a .txt file for LLMs",

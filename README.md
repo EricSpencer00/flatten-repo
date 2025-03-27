@@ -1,65 +1,90 @@
-# flatten-repo README
 
-This is the README for your extension "flatten-repo". After writing up a brief description, we recommend including the following sections.
+# 📄 flatten-repo
 
-## Features
-
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+**Flatten your codebase into a single `.txt` file — perfect for LLM parsing, prompt engineering, or snapshot analysis.**
 
 ---
 
-## Working with Markdown
+## ✨ Features
 
-You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
+- 🧠 Automatically collects all source code files in your workspace
+- 🗂️ Supports common languages: `.cpp`, `.py`, `.js`, `.ts`, `.html`, `.css`, `.json`, and more
+- 📄 Outputs a `flattened_code.txt` file with file headers and full contents
+- 🪄 Great for pasting into LLMs or running batch analysis
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets
+> The output includes `=== FILE: relative/path/to/file.ext ===` headers for each source file.
 
-## For more information
+---
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+## 📷 Demo
 
-**Enjoy!**
+> _(Coming soon)_  
+> Or, drop in a quick GIF of the extension being run from the command palette.
+
+---
+
+## ⚙️ How to Use
+
+1. Open any project folder in VS Code
+2. Run the command: `Flatten Project to TXT` from the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`)
+3. The extension will generate a file named `flattened_code.txt` in the root of your workspace
+
+---
+
+## ✅ Requirements
+
+- Node.js + VS Code
+- Works out of the box — no extra setup required
+
+---
+
+## ⚙️ Extension Settings
+
+_No settings yet!_  
+Let us know if you'd like customization like:
+- Select file types
+- Include/exclude folders
+- Output file name
+
+---
+
+## 🐞 Known Issues
+
+- No UI yet — just command-palette based
+- Ignores binary files and folders like `node_modules` and `.git` automatically
+
+---
+
+## 📦 Release Notes
+
+### 1.0.0
+- Initial release 🎉  
+- Flattens supported files into a `.txt` file for LLMs
+
+---
+
+## 🤖 Ideal Use Cases
+
+- Feeding source code into LLMs like ChatGPT or Claude
+- Prompt-chunking and token-counting workflows
+- Codebase snapshots for analysis
+
+---
+
+## 🧪 Contribute
+
+Ideas welcome! Open an issue or PR if you want to add:
+- Custom file type filters
+- Support for file size/token limits
+- Multi-file outputs (chunked)
+
+---
+
+## 🔗 More Info
+
+- [VS Code API Docs](https://code.visualstudio.com/api)
+- [Markdown Syntax Reference](https://www.markdownguide.org/basic-syntax/)
+
+---
+
+Made with ❤️ to help devs wrangle code for LLMs.
