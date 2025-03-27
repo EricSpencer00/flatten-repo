@@ -1,90 +1,123 @@
 
 # 📄 flatten-repo
 
-**Flatten your codebase into a single `.txt` file — perfect for LLM parsing, prompt engineering, or snapshot analysis.**
+**Flatten your codebase into `.txt` files — perfect for LLM parsing, prompt engineering, or static analysis.**
 
 ---
 
-## ✨ Features
+## ✨ Features (v0.0.2)
 
-- 🧠 Automatically collects all source code files in your workspace
-- 🗂️ Supports common languages: `.cpp`, `.py`, `.js`, `.ts`, `.html`, `.css`, `.json`, and more
-- 📄 Outputs a `flattened_code.txt` file with file headers and full contents
-- 🪄 Great for pasting into LLMs or running batch analysis
+- 🧠 Automatically collects and flattens all source code in your workspace
+- 🔍 Respects **whitelist** and **blacklist** rules via `.flatten_whitelist` and `.flatten_blacklist` files
+- 📦 Supports glob patterns like `*.h`, `**/test_*.py`, or `docs/*.md`
+- 🗂️ Outputs to a timestamped `/flattened` folder (e.g., `flattened_20250327-131045_1.txt`)
+- ✂️ Auto-chunks output files by character limit (configurable via settings)
+- ⚠️ Automatically adds `/flattened` to your `.gitignore`
 
-> The output includes `=== FILE: relative/path/to/file.ext ===` headers for each source file.
+> Each output includes headers like:  
+> `=== FILE: relative/path/to/file.ext ===`
 
 ---
 
 ## 📷 Demo
 
-> _(Coming soon)_  
-> Or, drop in a quick GIF of the extension being run from the command palette.
+> _(Coming soon — or submit one!)_  
+> Watch the extension scan and flatten your code from the command palette.
 
 ---
 
 ## ⚙️ How to Use
 
-1. Open any project folder in VS Code
-2. Run the command: `Flatten Project to TXT` from the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`)
-3. The extension will generate a file named `flattened_code.txt` in the root of your workspace
+1. Open your project folder in VS Code
+2. Run the command: `Flatten Project to TXT`  
+   (`Cmd+Shift+P` / `Ctrl+Shift+P`)
+3. Find the output(s) in the `/flattened` folder inside your workspace
 
 ---
 
 ## ✅ Requirements
 
-- Node.js + VS Code
-- Works out of the box — no extra setup required
+- VS Code
+- No dependencies required — just install and run
 
 ---
 
-## ⚙️ Extension Settings
+## ⚙️ Configuration (Optional)
 
-_No settings yet!_  
-Let us know if you'd like customization like:
-- Select file types
-- Include/exclude folders
-- Output file name
+Update your **`.vscode/settings.json`** or workspace settings:
+
+```json
+"flattenRepo.includeExtensions": [".cpp", ".h", ".py", ".js", ".ts", ".html", ".css", ".json"],
+"flattenRepo.ignoreDirs": ["node_modules", ".git", "dist"],
+"flattenRepo.maxChunkSize": 20000
+```
+
+---
+
+## 🔍 Whitelist / Blacklist Rules
+
+You can define fine-grained rules using glob patterns:
+
+- `.flatten_whitelist` and `.flatten_blacklist`
+- Supports `*`, `?`, and full/partial paths
+- Located in the root or in `/flattened`
+
+**Examples:**
+```
+# .flatten_whitelist
+*.py
+src/**/*.js
+
+# .flatten_blacklist
+*.test.*
+**/secret/*
+.env
+```
 
 ---
 
 ## 🐞 Known Issues
 
-- No UI yet — just command-palette based
-- Ignores binary files and folders like `node_modules` and `.git` automatically
+- No UI yet — command-only
+- Binary files and ignored folders like `node_modules` and `.git` are skipped by default
 
 ---
 
 ## 📦 Release Notes
 
-### 1.0.0
-- Initial release 🎉  
-- Flattens supported files into a `.txt` file for LLMs
+### 0.0.2
+- ➕ Added whitelist and blacklist glob support
+- ➕ Supports reading config from `/flattened` or root
+- 📝 Auto-updates `.gitignore`
+- 📁 Outputs timestamped files in a `flattened/` folder
 
 ---
 
 ## 🤖 Ideal Use Cases
 
-- Feeding source code into LLMs like ChatGPT or Claude
-- Prompt-chunking and token-counting workflows
-- Codebase snapshots for analysis
+- Prepping source code for LLM input (e.g., ChatGPT, Claude, Gemini)
+- Prompt engineering workflows
+- Code analysis snapshots
+- Audit trails / historical exports
 
 ---
 
 ## 🧪 Contribute
 
-Ideas welcome! Open an issue or PR if you want to add:
-- Custom file type filters
-- Support for file size/token limits
-- Multi-file outputs (chunked)
+Have a feature in mind?
+
+- Open an [issue](https://github.com/your-repo/issues)
+- Submit a PR
+- Ideas: add file token counting, Markdown output, multi-format support
 
 ---
 
-## 🔗 More Info
+## 🔗 Resources
 
-- [VS Code API Docs](https://code.visualstudio.com/api)
-- [Markdown Syntax Reference](https://www.markdownguide.org/basic-syntax/)
+- [VS Code Extension Docs](https://code.visualstudio.com/api)
+- [Glob Pattern Reference](https://github.com/isaacs/minimatch)
+- [Markdown Cheatsheet](https://www.markdownguide.org/basic-syntax/)
 
 ---
 
-Made with ❤️ to help devs wrangle code for LLMs.
+Made with ❤️ to help devs wrangle code for LLMs, one flattened file at a time.
