@@ -20,13 +20,12 @@ async function activate(context) {
         // Prepare 'flattened' directory
         const flattenedDir = path.join(rootPath, 'flattened');
         try {
-            // Check if flattenedDir exists; if not, create it
             await fs.access(flattenedDir);
         } catch {
             await fs.mkdir(flattenedDir, { recursive: true });
         }
 
-        // Generate a timestamp for naming the file(s)
+        // Generate timestamp for filenames
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -36,9 +35,60 @@ async function activate(context) {
         const second = String(now.getSeconds()).padStart(2, '0');
         const timestamp = `${year}${month}${day}-${hour}${minute}${second}`;
 
-        // Collect target files
-        let fileList = [];
+        // Helper: read a file into an array of non-comment, non-empty lines
+        // Read whitelist or blacklist from both root and /flattened folder
+		async function readListFile(filename) {
+			const locations = [
+				path.join(rootPath, filename),
+				path.join(rootPath, 'flattened', filename)
+			];
 
+			let patterns = [];
+
+			for (const filePath of locations) {
+				try {
+					const data = await fs.readFile(filePath, 'utf-8');
+					const lines = data
+						.split('\n')
+						.map(line => line.trim())
+						.filter(line => line && !line.startsWith('#'));
+					patterns.push(...lines);
+				} catch (err) {
+					if (err.code !== 'ENOENT') {
+						console.error(`Error reading ${filePath}:`, err);
+					}
+					// ENOENT just means the file didn't exist in that location — that's okay
+				}
+			}
+
+			return patterns;
+		}
+
+
+        // Read whitelist and blacklist from files
+        const whitelistPatterns = await readListFile('.flatten_whitelist');
+        const blacklistPatterns = await readListFile('.flatten_blacklist');
+
+        // Converts a glob pattern to a RegExp
+        function globToRegExp(glob) {
+            // Escape regex special characters except '*' and '?'
+            let regexStr = glob.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+            // Replace '*' with '.*' and '?' with '.'
+            regexStr = regexStr.replace(/\*/g, '.*').replace(/\?/g, '.');
+            return new RegExp(`^${regexStr}$`);
+        }
+
+        // Build arrays of regexes from glob patterns
+        const whitelistRegexes = whitelistPatterns.map(pattern => globToRegExp(pattern));
+        const blacklistRegexes = blacklistPatterns.map(pattern => globToRegExp(pattern));
+
+        // Test file paths against an array of regexes
+        function matchesAnyGlob(filePath, regexArray) {
+            return regexArray.some(regex => regex.test(filePath));
+        }
+
+        // Recursively collect files
+        let fileList = [];
         async function collectFiles(dir) {
             let items;
             try {
@@ -54,14 +104,34 @@ async function activate(context) {
                         continue;
                     }
                     await collectFiles(fullPath);
-                } else if (includeExtensions.includes(path.extname(item.name))) {
+                } else {
+                    // Check extension first
+                    if (!includeExtensions.includes(path.extname(item.name))) {
+                        continue;
+                    }
+
+                    // Build relative path for pattern checks
+                    const relativePath = path.relative(rootPath, fullPath);
+
+                    // Whitelist check: if whitelist is non-empty, file must match at least one glob
+                    if (whitelistRegexes.length > 0) {
+                        if (!matchesAnyGlob(relativePath, whitelistRegexes)) {
+                            continue;
+                        }
+                    }
+
+                    // Blacklist check: if file matches any blacklist glob, skip it
+                    if (matchesAnyGlob(relativePath, blacklistRegexes)) {
+                        continue;
+                    }
+
                     fileList.push(fullPath);
                 }
             }
         }
 
         try {
-            // Show progress notification
+            // Show progress bar in VS Code
             await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
                 title: 'Flattening repository...',
@@ -73,6 +143,8 @@ async function activate(context) {
 
                 let outputContent = '';
                 let processed = 0;
+
+                // Read all files into one big string (subject to chunking later)
                 for (const file of fileList) {
                     try {
                         const relativePath = path.relative(rootPath, file);
@@ -80,7 +152,7 @@ async function activate(context) {
                         const content = await fs.readFile(file, 'utf-8');
                         outputContent += content;
                     } catch (err) {
-                        console.error(`Error processing file: ${file}`, err);
+                        console.error(`Error reading file: ${file}`, err);
                     }
                     processed++;
                     if (processed % 10 === 0) {
@@ -88,7 +160,7 @@ async function activate(context) {
                     }
                 }
 
-                // Write output to one or multiple files (chunking)
+                // Write output with chunking if needed
                 if (maxChunkSize > 0 && outputContent.length > maxChunkSize) {
                     const chunks = [];
                     for (let i = 0; i < outputContent.length; i += maxChunkSize) {
@@ -98,34 +170,30 @@ async function activate(context) {
                         const chunkFilePath = path.join(flattenedDir, `flattened_${timestamp}_${i + 1}.txt`);
                         await fs.writeFile(chunkFilePath, chunks[i], 'utf-8');
                     }
-                    vscode.window.showInformationMessage(`✅ Flattened ${fileList.length} files into ${chunks.length} chunk(s) in /flattened folder.`);
+                    vscode.window.showInformationMessage(
+                        `✅ Flattened ${fileList.length} files into ${chunks.length} chunk(s) in /flattened folder.`
+                    );
                 } else {
-                    // If no chunking needed, just write everything to one file
                     const singleFilePath = path.join(flattenedDir, `flattened_${timestamp}_1.txt`);
                     await fs.writeFile(singleFilePath, outputContent, 'utf-8');
                     vscode.window.showInformationMessage(`✅ Flattened ${fileList.length} files into ${singleFilePath}`);
                 }
             });
 
-            // Finally, update or create .gitignore to ensure /flattened is ignored
+            // Update or create .gitignore to ensure /flattened is ignored
             try {
                 const gitignorePath = path.join(rootPath, '.gitignore');
                 let gitignoreContent = '';
                 try {
                     gitignoreContent = await fs.readFile(gitignorePath, 'utf-8');
                 } catch (error) {
-                    // .gitignore doesn't exist yet, so we'll create it
                     if (error.code === 'ENOENT') {
                         gitignoreContent = '';
                     } else {
-                        // Some other reading error
-                        console.error(`Error reading .gitignore:`, error);
+                        console.error('Error reading .gitignore:', error);
                     }
                 }
-
-                // Check if '/flattened' is already in .gitignore
                 if (!gitignoreContent.split('\n').some(line => line.trim() === '/flattened')) {
-                    // Append if missing
                     gitignoreContent += `${gitignoreContent.endsWith('\n') ? '' : '\n'}/flattened\n`;
                     await fs.writeFile(gitignorePath, gitignoreContent, 'utf-8');
                 }
