@@ -1,0 +1,29 @@
+name: Publish VS Code Extension
+
+on:
+  push:
+    tags:
+      - 'v*' # Only run on version tags (ex. v0.0.3)
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🧰 Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: 📦 Install vsce
+        run: npm install -g vsce
+
+      - name: 🔐 Authenticate with VSCE token
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.VSCE_PAT }}" > ~/.npmrc
+
+      - name: 🚀 Package and publish extension
+        run: vsce publish
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
