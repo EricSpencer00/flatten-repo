@@ -52,7 +52,7 @@ async function activate(context) {
 						.split('\n')
 						.map(line => line.trim())
 						.filter(line => line && !line.startsWith('#'));
-					patterns.push(...lines);
+					patterns = lines;
 				} catch (err) {
 					if (err.code !== 'ENOENT') {
 						console.error(`Error reading ${filePath}:`, err);
