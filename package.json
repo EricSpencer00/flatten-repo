@@ -4,6 +4,7 @@
   "displayName": "flatten-repo",
   "description": "Flattens codebase into a .txt file for LLMs",
   "version": "0.0.2",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.85.1"
   },
