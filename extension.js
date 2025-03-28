@@ -14,20 +14,28 @@ async function activate(context) {
         const flattenedDir = path.join(rootPath, 'flattened');
         await fs.mkdir(flattenedDir, { recursive: true });
 
-        // Config
         const config = vscode.workspace.getConfiguration('flattenRepo');
         const includeExtensions = config.get('includeExtensions', ['.js', '.jsx', '.ts', '.tsx', '.py', '.html', '.css']);
         const ignoreDirs = config.get('ignoreDirs', ['node_modules', '.git', 'flattened']);
-        const maxChunkTokens = 50000;
-        const estimatedCharsPerToken = 4;
-        const maxChunkSize = maxChunkTokens * estimatedCharsPerToken;
 
-        // Timestamp: m:ss,dd-MMM-yy
+        // Load flatten_settings.json if present
+        let settings = {
+            maxTokenLimit: 50000,
+            maxTokensPerFile: 25000
+        };
+        const settingsPath = path.join(flattenedDir, 'flatten_settings.json');
+        try {
+            const raw = await fs.readFile(settingsPath, 'utf8');
+            settings = { ...settings, ...JSON.parse(raw) };
+        } catch {}
+
+        const maxChunkSize = settings.maxTokenLimit * 4;
+        const maxFileSize = settings.maxTokensPerFile * 4;
+
         const now = new Date();
         const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         const timestamp = `${now.getMinutes()}:${now.getSeconds()},${now.getDate()}-${monthNames[now.getMonth()]}-${String(now.getFullYear()).slice(-2)}`;
 
-        // Create helper files if missing
         async function ensureFile(filename, defaultContent) {
             const filePath = path.join(flattenedDir, filename);
             try {
@@ -39,51 +47,9 @@ async function activate(context) {
             return filePath;
         }
 
-        const flattenIgnorePath = await ensureFile('.flatten_ignore', `# Default ignore patterns
-.env
-.env.*
-.secret
-.secret.*
-.credentials
-*.log
-*.zip
-*.tar
-*.gz
-*.rar
-*.7z
-*.bin
-*.exe
-*.dll
-*.so
-*.dylib
-*.ico
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.mp3
-*.mp4
-*.mov
-*.avi
-*.pdf
-*.docx
-*.xlsx
-*.pptx
-`);
-        const whitelistPath = await ensureFile('.flatten_whitelist', `# Optional whitelist (glob format)
-# src/**
-`);
-        const blacklistPath = await ensureFile('.flatten_blacklist', `# Optional blacklist (glob format)
-package.json
-package-lock.json
-yarn.lock
-babel.config.js
-metro.config.js
-jest.config.js
-android/**
-ios/**
-assets/**
-`);
+        await ensureFile('.flatten_ignore', `# Default ignore patterns\n.env\n.env.*\n.secret\n*.log\n*.zip\n*.png`);
+        await ensureFile('.flatten_whitelist', `# Optional whitelist (glob format)\n# src/**`);
+        await ensureFile('.flatten_blacklist', `# Optional blacklist (glob format)\npackage.json\nnode_modules/**\n*.xml\n*.json`);
 
         async function readList(file) {
             try {
@@ -94,20 +60,12 @@ assets/**
             }
         }
 
-        const whitelistPatterns = await readList('.flatten_whitelist');
-        const blacklistPatterns = await readList('.flatten_blacklist');
-        const ignorePatterns = await readList('.flatten_ignore');
+        const toRegex = glob => new RegExp('^' + glob.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$');
+        const whitelistRegexes = (await readList('.flatten_whitelist')).map(toRegex);
+        const blacklistRegexes = (await readList('.flatten_blacklist')).map(toRegex);
+        const ignoreRegexes = (await readList('.flatten_ignore')).map(toRegex);
+        const matchesAny = (p, regexes) => regexes.some(r => r.test(p));
 
-        const toRegex = glob =>
-            new RegExp('^' + glob.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$');
-
-        const whitelistRegexes = whitelistPatterns.map(toRegex);
-        const blacklistRegexes = blacklistPatterns.map(toRegex);
-        const ignoreRegexes = ignorePatterns.map(toRegex);
-
-        const matchesAny = (path, regexes) => regexes.some(re => re.test(path));
-
-        // File collection
         const fileList = [];
         async function collect(dir) {
             let items;
@@ -121,7 +79,6 @@ assets/**
             for (const item of items) {
                 const fullPath = path.join(dir, item.name);
                 const relative = path.relative(rootPath, fullPath);
-
                 if (item.isDirectory()) {
                     if (ignoreDirs.includes(item.name) || item.name.startsWith('.')) continue;
                     await collect(fullPath);
@@ -147,42 +104,53 @@ assets/**
                 await collect(rootPath);
                 progress.report({ message: `Processing ${fileList.length} files...` });
 
-                let output = '';
-                let processed = 0;
+                let chunks = [];
+                let currentChunk = '';
+                let fileCount = 0;
 
                 for (const file of fileList) {
+                    const rel = path.relative(rootPath, file);
+                    let content;
                     try {
-                        const rel = path.relative(rootPath, file);
-                        output += `\n\n=== FILE: ${rel} ===\n`;
-                        output += await fs.readFile(file, 'utf-8');
+                        content = await fs.readFile(file, 'utf-8');
                     } catch (err) {
                         console.error(`Error reading ${file}:`, err);
+                        continue;
                     }
-                    if (++processed % 10 === 0) {
-                        progress.report({ message: `${processed}/${fileList.length} files processed` });
+
+                    const fileEntry = `\n\n=== FILE: ${rel} ===\n${content}`;
+                    if (fileEntry.length > maxFileSize) {
+                        console.warn(`⚠️ Skipping ${rel} (too large)`);
+                        continue;
+                    }
+
+                    if ((currentChunk.length + fileEntry.length) > maxChunkSize) {
+                        chunks.push(currentChunk);
+                        currentChunk = '';
+                    }
+
+                    currentChunk += fileEntry;
+                    fileCount++;
+                    if (fileCount % 10 === 0) {
+                        progress.report({ message: `${fileCount} of ${fileList.length} files processed` });
                     }
                 }
 
-                const chunks = [];
-                for (let i = 0; i < output.length; i += maxChunkSize) {
-                    chunks.push(output.slice(i, i + maxChunkSize));
-                }
+                if (currentChunk) chunks.push(currentChunk);
 
                 for (let i = 0; i < chunks.length; i++) {
-                    const outPath = path.join(flattenedDir, `${timestamp}_${i + 1}.txt`);
-                    await fs.writeFile(outPath, chunks[i], 'utf-8');
+                    const filePath = path.join(flattenedDir, `${timestamp}_${i + 1}.txt`);
+                    await fs.writeFile(filePath, chunks[i], 'utf-8');
                 }
 
                 vscode.window.showInformationMessage(`✅ Flattened ${fileList.length} files into ${chunks.length} file(s).`);
             });
 
-            // Add /flattened to .gitignore
             const gitignorePath = path.join(rootPath, '.gitignore');
             let gitignore = '';
             try {
                 gitignore = await fs.readFile(gitignorePath, 'utf-8');
             } catch {}
-
             if (!gitignore.includes('/flattened')) {
                 gitignore += `${gitignore.endsWith('\n') ? '' : '\n'}/flattened\n`;
                 await fs.writeFile(gitignorePath, gitignore, 'utf-8');

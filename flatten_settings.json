@@ -1,0 +1,5 @@
+{
+    "maxTokenLimit": 50000,
+    "maxTokensPerFile": 25000
+  }
+  
