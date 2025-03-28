@@ -5,6 +5,7 @@
   "description": "Flattens codebase into a .txt file for LLMs",
   "version": "0.0.13",
   "license": "MIT",
+  "logo": "static/logo.png",
   "engines": {
     "vscode": "^1.85.1"
   },
