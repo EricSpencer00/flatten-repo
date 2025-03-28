@@ -3,7 +3,7 @@
   "name": "flatten-repo",
   "displayName": "flatten-repo",
   "description": "Flattens codebase into a .txt file for LLMs",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "license": "MIT",
   "engines": {
     "vscode": "^1.85.1"
@@ -138,16 +138,6 @@
           "type": "array",
           "default": [],
           "description": "Glob patterns for files to always exclude (applied globally across all repos)."
-        },
-        "flattenRepo.useGitIgnore": {
-          "type": "boolean",
-          "default": true,
-          "description": "If true, also ignore files and directories specified in the project’s .gitignore."
-        },
-        "flattenRepo.maxChunkSize": {
-          "type": "number",
-          "default": 0,
-          "description": "Maximum number of characters per file chunk."
         }
       }
     },
@@ -185,4 +175,3 @@
     "README.md"
   ]
 }
-
