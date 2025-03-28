@@ -19,6 +19,13 @@ jobs:
         with:
           node-version: 18
 
+      - name: Sync with main before bumping
+        run: |
+          git fetch origin
+          git merge origin/main --no-edit
+          git push origin ${{ github.ref_name }}
+    
+
       - name: Determine New Version
         id: version
         run: |
