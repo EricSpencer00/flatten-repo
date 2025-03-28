@@ -1,20 +1,63 @@
-name: Publish Switch
+name: Auto Publish VS Code Extension
 
 on:
   push:
+    tags:
+      - 'v0.*'
     branches:
       - main
 
 jobs:
-  switch:
+  publish:
     runs-on: ubuntu-latest
+
     steps:
-      - name: 🕹️ Manual Publish Switch
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Get Current Version
+        id: get-version
+        run: echo "version=$(jq -r .version package.json)" >> $GITHUB_OUTPUT
+
+      - name: Update Version (tag = minor, push = patch)
+        id: bump
         run: |
-          if [[ "${{ secrets.MANUAL_PUBLISH }}" == "true" ]]; then
-            echo "✅ MANUAL_PUBLISH is true — would publish here."
+          VERSION=$(jq -r .version package.json)
+          MAJOR=$(echo $VERSION | cut -d. -f1)
+          MINOR=$(echo $VERSION | cut -d. -f2)
+          PATCH=$(echo $VERSION | cut -d. -f3)
+
+          if [[ "${{ github.ref }}" == refs/tags/v0.* ]]; then
+            MINOR=$((MINOR + 1))
+            PATCH=0
           else
-            echo "🛑 MANUAL_PUBLISH is false — skipping."
+            PATCH=$((PATCH + 1))
           fi
-        env:
-          MANUAL_PUBLISH: ${{ secrets.MANUAL_PUBLISH }}
+
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          jq ".version = \"$NEW_VERSION\"" package.json > temp.json && mv temp.json package.json
+
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "🔧 Updated version to $NEW_VERSION"
+
+      - name: Commit and Push Version Bump
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add package.json
+          git commit -m "🔖 Bump version to ${{ steps.bump.outputs.new_version }}"
+          git push
+
+      - name: Install vsce
+        run: npm install -g vsce
+
+      - name: Publish to VS Code Marketplace
+        run: vsce publish -p ${{ secrets.VSCE_TOKEN }}
