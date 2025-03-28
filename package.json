@@ -82,7 +82,6 @@
             ".txt",
             ".gitignore",
             ".gitattributes",
-            "LICENSE",
             "README.md",
             "CHANGELOG",
             "CONTRIBUTING.md"
@@ -114,9 +113,31 @@
             ".nyc_output",
             "test-results",
             "reports",
-            ".gradle"
+            ".gradle",
+            "android",
+            "ios"
           ],
           "description": "Directory names to ignore."
+        },
+        "flattenRepo.useGitIgnore": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, also ignore files and directories specified in the project’s .gitignore."
+        },
+        "flattenRepo.maxChunkSize": {
+          "type": "number",
+          "default": 0,
+          "description": "Maximum number of characters per file chunk."
+        },
+        "flattenRepo.globalWhitelist": {
+          "type": "array",
+          "default": [],
+          "description": "Glob patterns for files to always include (applied globally across all repos)."
+        },
+        "flattenRepo.globalBlacklist": {
+          "type": "array",
+          "default": [],
+          "description": "Glob patterns for files to always exclude (applied globally across all repos)."
         },
         "flattenRepo.useGitIgnore": {
           "type": "boolean",
@@ -164,3 +185,4 @@
     "README.md"
   ]
 }
+
