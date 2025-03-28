@@ -202,8 +202,14 @@ blacklist:
 # Settings:
 # Set the token limits for flattening.
 # Suggestions:
-#   For GPT-3.5-turbo, try: 4096
-#   For GPT-4, try: 50000
+#   Claude 3.7: 128k tokens
+#   ChatGPT 4o: 128k tokens
+#   ChatGPT o3-mini-high: 200k tokens
+#   Claude 2: 100k tokens
+#   Anthropic Claude 3 Opus: 200k tokens
+#   Cohere Command: 32k tokens
+#   Google PaLM 2: 8k tokens
+#   Meta LLaMA 2: 4k tokens
 settings:
 maxTokenLimit: 50000
 maxTokensPerFile: 25000
