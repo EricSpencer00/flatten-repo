@@ -19,22 +19,16 @@ jobs:
         with:
           node-version: 18
 
-      - name: Sync with main before bumping
-        run: |
-          git fetch origin
-          git merge origin/main --no-edit
-          git push origin ${{ github.ref_name }}
-    
-
       - name: Determine New Version
         id: version
         run: |
-          # Read the current version
+          # Read the current version from package.json
           VERSION=$(jq -r .version package.json)
           MAJOR=$(echo $VERSION | cut -d. -f1)
           MINOR=$(echo $VERSION | cut -d. -f2)
           PATCH=$(echo $VERSION | cut -d. -f3)
           
+          # Determine branch and update version accordingly
           BRANCH="${GITHUB_REF#refs/heads/}"
           case "$BRANCH" in
             patch)
@@ -53,6 +47,7 @@ jobs:
 
           NEW_VERSION="$MAJOR.$MINOR.$PATCH"
           echo "New version: $NEW_VERSION"
+          # Update package.json with the new version
           jq ".version = \"$NEW_VERSION\"" package.json > temp.json && mv temp.json package.json
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
@@ -70,3 +65,9 @@ jobs:
           git checkout main
           git merge ${{ github.ref_name }} --no-edit
           git push origin main
+
+      - name: Tag the new version
+        run: |
+          NEW_VERSION=$(jq -r .version package.json)
+          git tag v$NEW_VERSION
+          git push origin v$NEW_VERSION
