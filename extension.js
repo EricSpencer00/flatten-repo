@@ -6,22 +6,17 @@ const path = require('path');
 
 /**
  * Converts a glob pattern to a regular expression.
- * This function first escapes special regex characters (except '*' and '?'),
- * then replaces '**' with a temporary token, '*' with a regex that matches any character except a slash,
- * then restores the token to match any character (including slashes), and finally replaces '?' with '.'.
+ * This function escapes regex special characters (except '*' and '?'),
+ * then replaces '**' with a temporary token, '*' with a pattern matching any characters except '/',
+ * then restores the token with '.*', and finally replaces '?' with '.'.
  * @param {string} glob 
  * @returns {RegExp}
  */
 function toRegex(glob) {
-  // Escape regex special characters, excluding * and ?
   let escaped = glob.replace(/([.+^${}()|[\]\\])/g, '\\$1');
-  // Replace '**' with a temporary placeholder.
   escaped = escaped.replace(/\*\*/g, '<<<TWOSTAR>>>');
-  // Replace remaining '*' with a pattern that matches anything except '/'
   escaped = escaped.replace(/\*/g, '[^/]*');
-  // Replace our temporary placeholder with '.*'
   escaped = escaped.replace(/<<<TWOSTAR>>>/g, '.*');
-  // Replace '?' with '.' (any single character)
   escaped = escaped.replace(/\?/g, '.');
   return new RegExp('^' + escaped + '$');
 }
@@ -41,40 +36,51 @@ async function ensureFile(filePath, defaultContent) {
 }
 
 /**
- * Parses a .flatten_ignore file into three arrays: global, whitelist, and blacklist.
- * Expects the file to use section headers "global:", "whitelist:" and "blacklist:".
+ * Parses a .flatten_ignore file into four parts: global, whitelist, blacklist, and settings.
+ * Expects the file to use section headers "global:", "whitelist:", "blacklist:" and "settings:".
+ * For the settings section, each line should be in the format key: value.
  * @param {string} filePath 
  * @param {string} rootPath 
- * @returns {Promise<{global: string[], whitelist: string[], blacklist: string[]}>}
+ * @returns {Promise<{global: string[], whitelist: string[], blacklist: string[], settings: Object}>}
  */
 async function parseFlattenIgnore(filePath, rootPath) {
   let content = '';
   try {
     content = await fs.readFile(filePath, 'utf8');
   } catch (err) {
-    return { global: [], whitelist: [], blacklist: [] };
+    return { global: [], whitelist: [], blacklist: [], settings: {} };
   }
   const lines = content.split('\n').map(line => line.trim());
   let section = null;
   const globalArr = [];
   const whitelistArr = [];
   const blacklistArr = [];
+  const settingsObj = {};
   for (const line of lines) {
     if (line.startsWith('#') || line === '') continue;
     if (line.toLowerCase().startsWith('global:')) { section = 'global'; continue; }
     if (line.toLowerCase().startsWith('whitelist:')) { section = 'whitelist'; continue; }
     if (line.toLowerCase().startsWith('blacklist:')) { section = 'blacklist'; continue; }
+    if (line.toLowerCase().startsWith('settings:')) { section = 'settings'; continue; }
     if (section === 'global') {
       globalArr.push(line);
     } else if (section === 'whitelist') {
       whitelistArr.push(line);
     } else if (section === 'blacklist') {
       blacklistArr.push(line);
+    } else if (section === 'settings') {
+      // Expect lines in key: value format.
+      const parts = line.split(':');
+      if (parts.length >= 2) {
+        const key = parts[0].trim();
+        const value = parts.slice(1).join(':').trim();
+        // Convert to number if applicable.
+        const num = Number(value);
+        settingsObj[key] = isNaN(num) ? value : num;
+      }
     }
   }
 
-  // For each pattern, if no glob wildcard is given and the pattern exists as a directory in the workspace,
-  // then automatically treat it as "pattern/**".
   async function processPattern(pattern) {
     if (!pattern.includes('*') && !pattern.includes('?')) {
       try {
@@ -99,7 +105,8 @@ async function parseFlattenIgnore(filePath, rootPath) {
   return {
     global: await processAll(globalArr),
     whitelist: await processAll(whitelistArr),
-    blacklist: await processAll(blacklistArr)
+    blacklist: await processAll(blacklistArr),
+    settings: settingsObj
   };
 }
 
@@ -111,6 +118,40 @@ async function parseFlattenIgnore(filePath, rootPath) {
  */
 function matchesAny(p, regexes) {
   return regexes.some(r => r.test(p));
+}
+
+/**
+ * Builds a directory tree (in a tree-like string format) from an array of relative file paths.
+ * @param {string[]} filePaths 
+ * @returns {string}
+ */
+function buildDirectoryTree(filePaths) {
+  const tree = {};
+  filePaths.forEach(relPath => {
+    const parts = relPath.split(path.sep);
+    let node = tree;
+    parts.forEach(part => {
+      if (!node[part]) {
+        node[part] = {};
+      }
+      node = node[part];
+    });
+  });
+  
+  function treeToString(node, indent = '') {
+    let output = '';
+    const entries = Object.entries(node);
+    entries.sort((a, b) => a[0].localeCompare(b[0]));
+    entries.forEach(([name, children], index) => {
+      const isLast = index === entries.length - 1;
+      output += `${indent}${isLast ? '└─ ' : '├─ '}${name}\n`;
+      const newIndent = indent + (isLast ? '   ' : '│  ');
+      output += treeToString(children, newIndent);
+    });
+    return output;
+  }
+  
+  return treeToString(tree);
 }
 
 // ----- Main Extension Code -----
@@ -130,17 +171,16 @@ async function activate(context) {
     const includeExtensions = config.get('includeExtensions', ['.js', '.jsx', '.ts', '.tsx', '.py', '.html', '.css']);
 
     // ==========================
-    // 1. Create or load .flatten_ignore file
+    // 1. Create or load .flatten_ignore file with settings suggestions.
     // ==========================
     const flattenIgnorePath = path.join(flattenedDir, '.flatten_ignore');
     const defaultIgnoreContent = `# .flatten_ignore
 # This file controls which files and directories are ignored or explicitly included during flattening.
-# You can use glob patterns here.
+# Use glob patterns here.
 # When a directory is specified without wildcards, it is automatically treated as "directory/**".
 #
 # --------------------------
 # Global Ignore Patterns:
-# Files or directories matching these patterns will always be ignored.
 global:
 node_modules
 .git
@@ -148,52 +188,53 @@ dist
 build
 # --------------------------
 # Local Whitelist Patterns:
-# If any patterns are specified here, then only files matching at least one of these patterns will be included.
 whitelist:
 # Example:
 # src/**
 # lib/**/*.js
 # --------------------------
 # Local Blacklist Patterns:
-# Files matching these patterns will be excluded.
 blacklist:
 # Example:
 # test/**
 # *.spec.js
+# --------------------------
+# Settings:
+# Set the token limits for flattening.
+# Suggestions:
+#   For GPT-3.5-turbo, try: 4096
+#   For GPT-4, try: 50000
+settings:
+maxTokenLimit: 50000
+maxTokensPerFile: 25000
 `;
     await ensureFile(flattenIgnorePath, defaultIgnoreContent);
 
     // ==========================
-    // 2. Parse the .flatten_ignore file into three arrays
+    // 2. Parse the .flatten_ignore file into four parts.
     // ==========================
     const ignoreRules = await parseFlattenIgnore(flattenIgnorePath, rootPath);
-    // Convert glob patterns to regexes using our new converter.
     const globalIgnoreRegexes = ignoreRules.global.map(toRegex);
     const whitelistRegexes = ignoreRules.whitelist.map(toRegex);
     const blacklistRegexes = ignoreRules.blacklist.map(toRegex);
-
-    // ==========================
-    // 3. Other settings (token limits etc.)
-    // ==========================
-    let settings = {
-      maxTokenLimit: 50000,
+    
+    // Merge settings: use settings from .flatten_ignore if provided.
+    const defaultSettings = {
+      maxTokenLimit: 50000, // tokens
       maxTokensPerFile: 25000
     };
-    const settingsPath = path.join(flattenedDir, 'flatten_settings.json');
-    try {
-      const raw = await fs.readFile(settingsPath, 'utf8');
-      settings = { ...settings, ...JSON.parse(raw) };
-    } catch { }
-    const maxChunkSize = settings.maxTokenLimit * 4;
+    const settings = { ...defaultSettings, ...ignoreRules.settings };
+
+    const maxChunkSize = settings.maxTokenLimit * 4; // approximate characters (assuming 4 chars per token)
     const maxFileSize = settings.maxTokensPerFile * 4;
     
-    // Timestamp for output file naming
+    // Timestamp for output file naming.
     const now = new Date();
     const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const timestamp = `${now.getHours()}:${now.getMinutes()},${now.getDate()}-${monthNames[now.getMonth()]}-${String(now.getFullYear()).slice(-2)}`;
 
     // ==========================
-    // 4. Collect files based on our new ignore/whitelist/blacklist logic
+    // 3. Collect files based on ignore/whitelist/blacklist logic.
     // ==========================
     const fileList = [];
     async function collect(dir) {
@@ -208,17 +249,12 @@ blacklist:
         const fullPath = path.join(dir, item.name);
         const relative = path.relative(rootPath, fullPath);
         if (item.isDirectory()) {
-          // Skip if the directory matches any global ignore pattern.
           if (matchesAny(relative, globalIgnoreRegexes)) continue;
           await collect(fullPath);
         } else {
-          // Skip files that match the global ignore.
           if (matchesAny(relative, globalIgnoreRegexes)) continue;
-          // If a whitelist exists, the file must match one of its patterns.
           if (whitelistRegexes.length && !matchesAny(relative, whitelistRegexes)) continue;
-          // Skip if it matches the blacklist.
           if (matchesAny(relative, blacklistRegexes)) continue;
-          // Only include files with allowed extensions.
           if (!includeExtensions.includes(path.extname(item.name))) continue;
           fileList.push(fullPath);
         }
@@ -235,8 +271,9 @@ blacklist:
         await collect(rootPath);
         progress.report({ message: `Processing ${fileList.length} files...` });
         
-        let chunks = [];
-        let currentChunk = '';
+        // Instead of just a string, group files into chunks with their own file list.
+        const chunks = [];
+        let currentChunk = { content: '', files: [] };
         let fileCount = 0;
 
         for (const file of fileList) {
@@ -253,25 +290,32 @@ blacklist:
             console.warn(`⚠️ Skipping ${rel} (too large)`);
             continue;
           }
-          if ((currentChunk.length + fileEntry.length) > maxChunkSize) {
+          if ((currentChunk.content.length + fileEntry.length) > maxChunkSize) {
+            // Push current chunk and start a new one.
             chunks.push(currentChunk);
-            currentChunk = '';
+            currentChunk = { content: '', files: [] };
           }
-          currentChunk += fileEntry;
+          currentChunk.content += fileEntry;
+          currentChunk.files.push(rel);
           fileCount++;
           if (fileCount % 10 === 0) {
             progress.report({ message: `${fileCount} of ${fileList.length} files processed` });
           }
         }
-        if (currentChunk) chunks.push(currentChunk);
+        if (currentChunk.content) chunks.push(currentChunk);
+        
+        // Write each chunk to a file, prepending a directory tree header.
         for (let i = 0; i < chunks.length; i++) {
+          const treeString = buildDirectoryTree(chunks[i].files);
+          const header = `=== Directory Tree ===\n${treeString}\n\n`;
           const filePath = path.join(flattenedDir, `${timestamp}_${i + 1}.txt`);
-          await fs.writeFile(filePath, chunks[i], 'utf-8');
+          await fs.writeFile(filePath, header + chunks[i].content, 'utf-8');
         }
+        
         vscode.window.showInformationMessage(`✅ Flattened ${fileList.length} files into ${chunks.length} file(s).`);
       });
 
-      // Optionally, update the workspace’s .gitignore to ignore /flattened if not already present.
+      // Optionally update .gitignore to ignore /flattened.
       const gitignorePath = path.join(rootPath, '.gitignore');
       let gitignore = '';
       try {
