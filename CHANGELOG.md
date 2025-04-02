@@ -1,3 +1,6 @@
+
+## [0.1.0] - 2025-04-02
+
 # Change Log
 
 All notable changes to the "flatten-repo" extension will be documented in this file.
