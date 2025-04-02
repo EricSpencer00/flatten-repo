@@ -29,7 +29,7 @@ function toRegex(glob) {
 async function ensureFile(filePath, defaultContent) {
   try {
     await fs.access(filePath);
-  } catch {
+  } catch (_) {
     await fs.writeFile(filePath, defaultContent, 'utf-8');
     vscode.window.showInformationMessage(`✅ Created ${path.basename(filePath)} in /flattened`);
   }
@@ -89,7 +89,7 @@ async function parseFlattenIgnore(filePath, rootPath) {
         if (stat.isDirectory() && !pattern.endsWith('/**')) {
           return pattern + '/**';
         }
-      } catch (err) {
+      } catch (_) {
         // If the path doesn't exist, leave the pattern as is.
       }
     }
