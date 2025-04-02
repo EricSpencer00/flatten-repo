@@ -1,4 +1,3 @@
-
 # 📄 flatten-repo
 
 [![Publish Extension](https://github.com/EricSpencer00/flatten-repo/actions/workflows/publish.yml/badge.svg)](https://github.com/EricSpencer00/flatten-repo/actions/workflows/publish.yml)
@@ -130,19 +129,33 @@ import React from 'react';
 
 ---
 
-## 🧪 Contributing
+## 🤝 Contributing
 
-Want to help improve this tool?
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-- Star the repo ⭐
-- Submit a [feature request](https://github.com/EricSpencer00/flatten-repo/issues)
-- Open a pull request 💪
+### Development Setup
 
-Ideas to explore:
-- File token counts
-- Markdown formatting
-- Multi-model export formats
-- UI interface for selecting flatten options
+```bash
+git clone https://github.com/EricSpencer00/flatten-repo.git
+cd flatten-repo
+npm install
+code .
+```
+
+Press F5 to start debugging the extension.
+
+### Required Tokens for CI/CD
+
+For maintainers, ensure you have set up:
+- `VSCE_PAT`: VS Code Marketplace publishing token
+- `GH_PAT`: GitHub token with repo and workflow permissions
+- `CODECOV_TOKEN`: Codecov.io token for coverage reports
+
+These tokens should be added in the repository's Settings → Secrets and variables → Actions.
 
 ---
 
