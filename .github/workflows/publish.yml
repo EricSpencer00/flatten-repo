@@ -11,15 +11,19 @@ on:
       version:
         description: 'Version to publish (e.g., 1.2.3)'
         required: false
+<<<<<<< HEAD
 
 permissions:
   contents: write
   packages: write
   pull-requests: write
+=======
+>>>>>>> d6c238e (v0.2.0)
 
 jobs:
   test:
     runs-on: ubuntu-latest
+<<<<<<< HEAD
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,7 +44,47 @@ jobs:
           if [ $? -ne 0 ]; then
             echo "::error::Tests failed"
             exit 1
+=======
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - run: npm ci
+      - run: npm test
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set Version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.version }}" != "" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            VERSION=$(jq -r .version package.json)
+>>>>>>> d6c238e (v0.2.0)
           fi
+          echo "Setting version to: $VERSION"
+          jq ".version = \"$VERSION\"" package.json > temp.json && mv temp.json package.json
+          echo "new_version=$VERSION" >> $GITHUB_OUTPUT
 
   publish:
     needs: test
@@ -85,6 +129,7 @@ jobs:
           echo "new_version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Install vsce
+<<<<<<< HEAD
         run: |
           npm install -g @vscode/vsce
           if [ $? -ne 0 ]; then
@@ -99,11 +144,18 @@ jobs:
             echo "::error::Failed to package extension"
             exit 1
           fi
+=======
+        run: npm install -g @vscode/vsce
+
+      - name: Package Extension
+        run: vsce package
+>>>>>>> d6c238e (v0.2.0)
 
       - name: Verify Package
         run: |
           VSIX=$(ls *.vsix)
           echo "Created package: $VSIX"
+<<<<<<< HEAD
           if [ ! -f "$VSIX" ]; then
             echo "::error::VSIX package not found"
             exit 1
@@ -116,6 +168,12 @@ jobs:
             exit 1
           fi
           vsce publish -p ${{ secrets.VSCE_PAT }}
+=======
+          [ -f "$VSIX" ] || exit 1
+
+      - name: Publish to VS Code Marketplace
+        run: vsce publish -p ${{ secrets.VSCE_PAT }}
+>>>>>>> d6c238e (v0.2.0)
         env:
           VSCE_TOKEN: ${{ secrets.VSCE_PAT }}
 
@@ -127,5 +185,10 @@ jobs:
           body_path: CHANGELOG.md
           draft: false
           prerelease: false
+<<<<<<< HEAD
           token: ${{ secrets.GITHUB_TOKEN }}
           fail_on_unmatched_files: true
+=======
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+>>>>>>> d6c238e (v0.2.0)

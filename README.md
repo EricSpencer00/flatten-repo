@@ -1,131 +1,133 @@
 # 📄 flatten-repo
 
 [![Publish Extension](https://github.com/EricSpencer00/flatten-repo/actions/workflows/publish.yml/badge.svg)](https://github.com/EricSpencer00/flatten-repo/actions/workflows/publish.yml)
+[![Code Coverage](https://codecov.io/gh/EricSpencer00/flatten-repo/branch/main/graph/badge.svg)](https://codecov.io/gh/EricSpencer00/flatten-repo)
 
 **Flatten your entire codebase into clean, readable `.txt` files — optimized for LLMs like ChatGPT, Claude, and Gemini.**
 
 ---
 
+<<<<<<< HEAD
 ## ✨ Features (v0.12.0)
+=======
+## ✨ Features (v0.2.0)
+>>>>>>> d6c238e (v0.2.0)
 
-- 🔁 Auto-flattens your workspace into plain `.txt` chunks
-- 🧠 Built for LLM parsing, prompt engineering, and static code analysis
-- 📂 Each chunk includes a **directory tree** overview of included files
-- ✂️ Auto-chunks content using a configurable **token limit** (~4 characters per token)
-- 🔍 Powerful support for glob-based **ignore**, **whitelist**, and **blacklist**
-- 🧾 All configs live in a single `.flatten_ignore` file (generated automatically)
-- ⚙️ Customize file extensions, folders to ignore, and token size limits
-- 📁 Output saved in timestamped files under `/flattened`
-- 🚫 Auto-adds `/flattened` to your `.gitignore`
-
-> Each chunk starts with a tree-like outline of included files, followed by:
->  
-> `=== FILE: path/to/file.ext ===`
+- 🚀 **High Performance**
+  - Parallel file processing with configurable concurrency
+  - Memory-efficient chunking for large codebases
+  - Smart content truncation for oversized files
+  
+- 🎯 **Smart File Selection**
+  - Intelligent scoring system for file importance
+  - Configurable file extensions and ignore patterns
+  - Support for whitelist and blacklist rules
+  
+- 📊 **Enhanced Progress Tracking**
+  - Detailed progress reporting with step counts
+  - Clear error messages with troubleshooting hints
+  - Cancellation support at any stage
+  
+- 🔧 **Flexible Configuration**
+  - Single `.flatten_ignore` file for all settings
+  - Token limit customization per LLM model
+  - Project-specific overrides via VS Code settings
 
 ---
 
-## ⚙️ How to Use
+## 🚀 Quick Start
 
-1. Open a folder in VS Code
-2. Open Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`)
-3. Run: `Flatten Project to TXT`
-4. View flattened files inside the `/flattened` folder
+1. Install from VS Code Marketplace
+2. Open your project folder
+3. Press `Cmd+Shift+P` (Mac) or `Ctrl+Shift+P` (Windows/Linux)
+4. Type `Flatten Project to TXT` and press Enter
+5. Find your flattened files in the `/flattened` directory
 
 ---
 
-## 🛠️ Configuration
+## ⚙️ Configuration Options
 
-You can configure behavior in your `.vscode/settings.json`:
+### VS Code Settings
 
 ```json
-"flattenRepo.includeExtensions": [".ts", ".tsx", ".js", ".jsx", ".py", ".html", ".css"],
-"flattenRepo.ignoreDirs": ["node_modules", ".git", "dist"],
-"flattenRepo.maxChunkSize": 200000
+{
+  "flattenRepo.includeExtensions": [
+    ".ts", ".tsx", ".js", ".jsx", 
+    ".py", ".html", ".css"
+  ],
+  "flattenRepo.ignoreDirs": [
+    "node_modules", ".git", "dist"
+  ],
+  "flattenRepo.maxChunkSize": 200000,
+  "flattenRepo.maxConcurrentFiles": 4
+}
 ```
 
-Or configure per-project settings via `.flatten_ignore`.
-
----
-
-## 📄 .flatten_ignore
-
-This single file controls:
-- ✅ Glob-based `global` ignore rules
-- ➕ Optional `whitelist` or `blacklist`
-- 📐 Token limits via a `settings:` section
-
-Auto-generated in `/flattened` if missing.
-
-### 🔁 Sample `.flatten_ignore`
+### .flatten_ignore
 
 ```txt
-# Ignore rules
+# Global ignore patterns
 global:
 node_modules
 .git
 dist
+build
 
-# Whitelist (optional)
+# Optional whitelist
 whitelist:
-src/**/*.js
+src/**/*.ts
+lib/**/*.js
 
-# Blacklist (optional)
+# Optional blacklist
 blacklist:
-**/*.test.js
+**/*.test.ts
+**/*.spec.js
 .env
 
-# Settings (optional)
+# Performance settings
 settings:
-maxTokenLimit: 50000
-maxTokensPerFile: 25000
-
-# Suggestions:
-#   Claude 3.7: 128k tokens
-#   ChatGPT 4o: 128k tokens
-#   ChatGPT o3-mini-high: 200k tokens
-#   Claude 2: 100k tokens
-#   Anthropic Claude 3 Opus: 200k tokens
-#   Cohere Command: 32k tokens
-#   Google PaLM 2: 8k tokens
-#   Meta LLaMA 2: 4k tokens
+maxTokenLimit: 128000    # Claude 3.7, GPT-4
+maxTokensPerFile: 50000  # Per file limit
+maxConcurrentFiles: 4    # Parallel processing
 ```
 
 ---
 
-## 📐 Output Format
+## 📊 Performance Tips
 
-Each `.txt` output file looks like this:
-
-```
-=== Directory Tree ===
-├─ App.tsx
-├─ index.js
-└─ components
-   ├─ Header.tsx
-   └─ Footer.tsx
-
-=== FILE: App.tsx ===
-import React from 'react';
-...
-```
+- **Memory Usage**: Adjust `maxTokensPerFile` for large files
+- **Speed**: Configure `maxConcurrentFiles` based on your CPU
+- **Size**: Use whitelist/blacklist to focus on important code
+- **Efficiency**: Enable parallel processing for faster results
 
 ---
 
-## ✅ Use Cases
+## 🔍 Advanced Features
 
-- Preparing source code for LLM input
-- Clean context formatting for ChatGPT, Claude, Gemini, etc.
-- Snapshotting your repo for AI audits or static reviews
-- Prompt engineering pipelines
-- Code flattening for full-project memory with agents
+### File Scoring System
+
+Files are scored based on:
+- 📏 Size (smaller files preferred)
+- 📂 Location (src/lib folders prioritized)
+- 📝 File type (source code > config files)
+- 🕒 Modification date (recent changes scored higher)
+
+### Error Handling
+
+Detailed error messages for common issues:
+- File access permissions
+- Memory limitations
+- System resource constraints
+- Invalid configurations
 
 ---
 
 ## 🐞 Known Limitations
 
-- No graphical UI (yet) — command-only
-- Does not flatten binary or image files
-- Some advanced glob edge cases may need refinement
+- Binary files not supported
+- Image files excluded
+- Some complex glob patterns may need tweaking
+- Maximum file size limit of 50MB
 
 ---
 
@@ -147,6 +149,7 @@ code .
 ```
 
 Press F5 to start debugging the extension.
+<<<<<<< HEAD
 
 ### Required Tokens for CI/CD
 
@@ -156,15 +159,26 @@ For maintainers, ensure you have set up:
 - `CODECOV_TOKEN`: Codecov.io token for coverage reports
 
 These tokens should be added in the repository's Settings → Secrets and variables → Actions.
+=======
+>>>>>>> d6c238e (v0.2.0)
 
 ---
 
-## 🔗 Resources
+## 📈 Roadmap
 
-- [VS Code Extension Docs](https://code.visualstudio.com/api)
-- [Glob Patterns (minimatch)](https://github.com/isaacs/minimatch)
-- [Token Estimator Tool](https://platform.openai.com/tokenizer)
+- [ ] Graphical UI for configuration
+- [ ] Custom output formatters
+- [ ] Multi-model export formats
+- [ ] Token count estimation
+- [ ] Incremental flattening
+- [ ] Project statistics dashboard
 
 ---
 
-Made with ❤️ to help devs and LLMs speak the same language.
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+Made with ❤️ by Eric Spencer. Star ⭐ the repo if you find it useful!

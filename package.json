@@ -3,7 +3,11 @@
   "name": "flatten-repo",
   "displayName": "flatten-repo",
   "description": "Flattens codebase into a .txt file for LLMs",
+<<<<<<< HEAD
   "version": "0.12.1",
+=======
+  "version": "0.0.17",
+>>>>>>> d6c238e (v0.2.0)
   "license": "MIT",
   "logo": "static/logo.png",
   "engines": {
@@ -11,9 +15,6 @@
   },
   "categories": [
     "Other"
-  ],
-  "activationEvents": [
-    "onCommand:flatten-repo.flattenProjectToTxt"
   ],
   "main": "./extension.js",
   "contributes": {
@@ -146,6 +147,10 @@
       {
         "command": "flatten-repo.flattenProjectToTxt",
         "title": "Flatten Project to TXT"
+      },
+      {
+        "command": "flatten-repo.createFlattenIgnore",
+        "title": "Create/Edit .flatten_ignore File"
       }
     ]
   },
@@ -160,16 +165,33 @@
   "scripts": {
     "lint": "eslint .",
     "pretest": "npm run lint",
+<<<<<<< HEAD
     "test": "npm run lint",
     "vscode-test": "vscode-test",
     "full-test": "npm run lint && vscode-test"
+=======
+    "test": "vscode-test",
+    "coverage": "nyc npm test",
+    "report": "nyc report --reporter=text-lcov > coverage.lcov"
+>>>>>>> d6c238e (v0.2.0)
   },
   "devDependencies": {
-    "@types/vscode": "^1.85.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
-    "eslint": "^9.23.0",
+    "@types/vscode": "^1.85.1",
     "@vscode/test-cli": "^0.0.10",
+<<<<<<< HEAD
     "@vscode/test-electron": "^2.4.1"
   }
+=======
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.23.0",
+    "nyc": "^17.1.0"
+  },
+  "files": [
+    "extension.js",
+    "package.json",
+    "README.md"
+  ]
+>>>>>>> d6c238e (v0.2.0)
 }
