@@ -1,4 +1,4 @@
-name: Auto Publish VS Code Extension
+name: Publish VS Code Extension
 
 on:
   push:
@@ -6,37 +6,79 @@ on:
       - 'v*.*.*'
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 1.2.3)'
+        required: false
 
 jobs:
-  publish:
+  test:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - run: npm ci
+      - run: npm test
 
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Set Version for Tag Push (if applicable)
+      - name: Set Version
         id: version
         run: |
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            TAG_VERSION="${GITHUB_REF#refs/tags/v}"
-            echo "Detected version tag: $TAG_VERSION"
-            jq ".version = \"$TAG_VERSION\"" package.json > temp.json && mv temp.json package.json
-            echo "new_version=$TAG_VERSION" >> $GITHUB_OUTPUT
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.version }}" != "" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            VERSION=$(jq -r .version package.json)
           fi
+          echo "Setting version to: $VERSION"
+          jq ".version = \"$VERSION\"" package.json > temp.json && mv temp.json package.json
+          echo "new_version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Install vsce
-        run: npm install -g vsce
+        run: npm install -g @vscode/vsce
+
+      - name: Package Extension
+        run: vsce package
+
+      - name: Verify Package
+        run: |
+          VSIX=$(ls *.vsix)
+          echo "Created package: $VSIX"
+          [ -f "$VSIX" ] || exit 1
 
       - name: Publish to VS Code Marketplace
-        run: vsce publish -p $VSCE_TOKEN
+        run: vsce publish -p ${{ secrets.VSCE_PAT }}
         env:
           VSCE_TOKEN: ${{ secrets.VSCE_PAT }}
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "*.vsix"
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
