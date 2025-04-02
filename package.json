@@ -3,7 +3,7 @@
   "name": "flatten-repo",
   "displayName": "flatten-repo",
   "description": "Flattens codebase into a .txt file for LLMs",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "license": "MIT",
   "logo": "static/logo.png",
   "engines": {
