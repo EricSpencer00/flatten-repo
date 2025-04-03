@@ -6,7 +6,7 @@
 
 ---
 
-## ✨ Features (v0.20.0)
+## ✨ Features (v0.12.0)
 
 - 🔁 Auto-flattens your workspace into plain `.txt` chunks
 - 🧠 Built for LLM parsing, prompt engineering, and static code analysis

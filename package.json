@@ -3,7 +3,7 @@
   "name": "flatten-repo",
   "displayName": "flatten-repo",
   "description": "Flattens codebase into a .txt file for LLMs",
-  "version": "0.20.0",
+  "version": "0.12.1",
   "license": "MIT",
   "logo": "static/logo.png",
   "engines": {
@@ -171,10 +171,5 @@
     "eslint": "^9.23.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1"
-  },
-  "files": [
-    "extension.js",
-    "package.json",
-    "README.md"
-  ]
+  }
 }

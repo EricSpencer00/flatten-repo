@@ -1,14 +1,13 @@
-## [0.20.0] - 2024-04-02
+## [0.12.0] - 2024-04-02
 
-- 🚀 Major version update
+- 🚀 Version consistency update
 - ✨ Improved error handling and progress reporting
 - 🔧 Enhanced file processing and chunking
 - 📝 Better documentation and examples
 - ⚡️ Performance improvements
 - 🐛 Bug fixes and stability improvements
 
-## [0.11.0] - 2025-04-02
-
+## [0.11.0] - 2024-04-02
 
 ## [0.10.0] - 2025-04-02
 

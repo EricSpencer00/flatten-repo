@@ -12,34 +12,59 @@ on:
         description: 'Version to publish (e.g., 1.2.3)'
         required: false
 
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 18
-      - run: npm ci
-      - run: npm test
+          node-version: '18'
+          cache: 'npm'
+      - name: Install Dependencies
+        run: |
+          npm ci
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to install dependencies"
+            exit 1
+          fi
+      - name: Run Tests
+        run: |
+          echo "Running linting checks in CI environment..."
+          npm test
+          if [ $? -ne 0 ]; then
+            echo "::error::Tests failed"
+            exit 1
+          fi
 
   publish:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: '18'
+          cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install Dependencies
+        run: |
+          npm ci
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to install dependencies"
+            exit 1
+          fi
 
       - name: Set Version
         id: version
@@ -51,24 +76,46 @@ jobs:
           else
             VERSION=$(jq -r .version package.json)
           fi
+          if [ -z "$VERSION" ]; then
+            echo "::error::Failed to determine version"
+            exit 1
+          fi
           echo "Setting version to: $VERSION"
           jq ".version = \"$VERSION\"" package.json > temp.json && mv temp.json package.json
           echo "new_version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Install vsce
-        run: npm install -g @vscode/vsce
+        run: |
+          npm install -g @vscode/vsce
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to install vsce"
+            exit 1
+          fi
 
       - name: Package Extension
-        run: vsce package
+        run: |
+          vsce package
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to package extension"
+            exit 1
+          fi
 
       - name: Verify Package
         run: |
           VSIX=$(ls *.vsix)
           echo "Created package: $VSIX"
-          [ -f "$VSIX" ] || exit 1
+          if [ ! -f "$VSIX" ]; then
+            echo "::error::VSIX package not found"
+            exit 1
+          fi
 
       - name: Publish to VS Code Marketplace
-        run: vsce publish -p ${{ secrets.VSCE_PAT }}
+        run: |
+          if [ -z "${{ secrets.VSCE_PAT }}" ]; then
+            echo "::error::VSCE_PAT secret is not set"
+            exit 1
+          fi
+          vsce publish -p ${{ secrets.VSCE_PAT }}
         env:
           VSCE_TOKEN: ${{ secrets.VSCE_PAT }}
 
@@ -80,5 +127,5 @@ jobs:
           body_path: CHANGELOG.md
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fail_on_unmatched_files: true
