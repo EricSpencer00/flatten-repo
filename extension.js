@@ -582,7 +582,10 @@ dist
 build
 venv
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> ac733e4 (add default ignore paths)
 .vscode
 .idea
 __pycache__
@@ -590,7 +593,10 @@ __pycache__
 Pods
 .DS_Store
 .env
+<<<<<<< HEAD
 >>>>>>> aec9ab3 (Refactor file and add global ignore patterns)
+=======
+>>>>>>> ac733e4 (add default ignore paths)
 # --------------------------
 # Local Whitelist Patterns:
 whitelist:
