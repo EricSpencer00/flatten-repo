@@ -575,11 +575,22 @@ async function activate(context) {
 # --------------------------
 # Global Ignore Patterns:
 global:
+flattened
 node_modules
 .git
 dist
 build
 venv
+<<<<<<< HEAD
+=======
+.vscode
+.idea
+__pycache__
+.gradle
+Pods
+.DS_Store
+.env
+>>>>>>> aec9ab3 (Refactor file and add global ignore patterns)
 # --------------------------
 # Local Whitelist Patterns:
 whitelist:
