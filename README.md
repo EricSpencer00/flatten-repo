@@ -1,4 +1,4 @@
-# 📄 flatten-repo
+# 📄 flatten-repo 
 
 [![Publish Extension](https://github.com/EricSpencer00/flatten-repo/actions/workflows/publish.yml/badge.svg)](https://github.com/EricSpencer00/flatten-repo/actions/workflows/publish.yml)
 
