@@ -7,11 +7,7 @@
 
 ---
 
-<<<<<<< HEAD
 ## ✨ Features (v0.12.0)
-=======
-## ✨ Features (v0.2.0)
->>>>>>> d6c238e (v0.2.0)
 
 - 🚀 **High Performance**
   - Parallel file processing with configurable concurrency
@@ -147,20 +143,6 @@ cd flatten-repo
 npm install
 code .
 ```
-
-Press F5 to start debugging the extension.
-<<<<<<< HEAD
-
-### Required Tokens for CI/CD
-
-For maintainers, ensure you have set up:
-- `VSCE_PAT`: VS Code Marketplace publishing token
-- `GH_PAT`: GitHub token with repo and workflow permissions
-- `CODECOV_TOKEN`: Codecov.io token for coverage reports
-
-These tokens should be added in the repository's Settings → Secrets and variables → Actions.
-=======
->>>>>>> d6c238e (v0.2.0)
 
 ---
 
