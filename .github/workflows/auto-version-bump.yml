@@ -1,0 +1,13 @@
+# .github/workflows/always-pass.yml
+name: Always Pass
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Do nothing and succeed
+        run: echo "This workflow does nothing and always passes"
