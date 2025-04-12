@@ -1,7 +1,6 @@
 # 📄 flatten-repo
 
 [![Publish Extension](https://github.com/EricSpencer00/flatten-repo/actions/workflows/publish.yml/badge.svg)](https://github.com/EricSpencer00/flatten-repo/actions/workflows/publish.yml)
-[![Code Coverage](https://codecov.io/gh/EricSpencer00/flatten-repo/branch/main/graph/badge.svg)](https://codecov.io/gh/EricSpencer00/flatten-repo)
 
 **Flatten your entire codebase into clean, readable `.txt` files — optimized for LLMs like ChatGPT, Claude, and Gemini.**
 
