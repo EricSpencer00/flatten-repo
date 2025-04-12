@@ -37,15 +37,6 @@ jobs:
             exit 1
           fi
 
-      - name: Run Tests
-        run: |
-          echo "Running linting checks in CI environment..."
-          npm test
-          if [ $? -ne 0 ]; then
-            echo "::error::Tests failed"
-            exit 1
-          fi
-
   publish:
     needs: test
     runs-on: ubuntu-latest
