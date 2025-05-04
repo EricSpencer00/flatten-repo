@@ -1,0 +1,60 @@
+# Flatten Repository Ignore Patterns
+# This file controls which files and directories are included/excluded when flattening the repository
+
+# Global ignore patterns (applied to all directories)
+# These patterns will always be ignored
+[global]
+node_modules/
+dist/
+build/
+.flattened/
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local whitelist patterns (override global ignores)
+# These patterns will be included even if they match global ignores
+[whitelist]
+src/main.js
+test/main.test.js
+docs/README.md
+
+# Local blacklist patterns (additional ignores)
+# These patterns will be ignored in addition to global patterns
+[blacklist]
+test/coverage/
+docs/api/
+*.min.js
+*.map
+
+# Settings
+[settings]
+# Maximum token limit for the output file
+maxTokenLimit=8000
+
+# Maximum number of concurrent files to process
+maxConcurrentFiles=10
+
+# Whether to use .gitignore patterns
+useGitIgnore=true
+
+# Process only the smallest non-library files
+processSmallestFiles=true
+
+# File size limits (in bytes)
+maxFileSize=1048576  # 1MB
+minFileSize=100      # 100 bytes
+
+# File extensions to include
+includeExtensions=.js,.ts,.jsx,.tsx,.md,.json
+
+# File extensions to exclude
+excludeExtensions=.min.js,.map,.log,.tmp
+
+# Documentation
+# - Global patterns are always applied
+# - Whitelist patterns override global patterns
+# - Blacklist patterns are additional ignores
+# - Settings control processing behavior 

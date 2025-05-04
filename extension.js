@@ -250,15 +250,16 @@ async function processFilesInParallel(files, rootPath, maxFileSize, maxConcurren
 }
 
 /**
- * Estimates the number of output files that will be created based on file sizes and chunk limits
+ * Estimates the total size of files and suggests optimizations
  * @param {Array<{file: string, size: number}>} files 
  * @param {number} maxChunkSize 
- * @returns {Promise<{estimatedFiles: number, totalSize: number}>}
+ * @returns {Promise<{estimatedFiles: number, totalSize: number, suggestions: string[]}>}
  */
 async function estimateOutputFiles(files, maxChunkSize) {
   let currentChunkSize = 0;
   let numChunks = 1;
   let totalSize = 0;
+  const suggestions = [];
 
   for (const { size } of files) {
     totalSize += size;
@@ -270,7 +271,83 @@ async function estimateOutputFiles(files, maxChunkSize) {
     }
   }
 
-  return { estimatedFiles: numChunks, totalSize };
+  // Add suggestions if multiple files would be created
+  if (numChunks > 1) {
+    suggestions.push(
+      `⚠️ This will create ${numChunks} files (${(totalSize / 1024 / 1024).toFixed(1)}MB total).`,
+      "To reduce to a single file, you can:",
+      "1. Increase maxTokenLimit in settings",
+      "2. Add more patterns to blacklist",
+      "3. Use 'Process only smallest non-library files' option"
+    );
+  }
+
+  return { estimatedFiles: numChunks, totalSize, suggestions };
+}
+
+/**
+ * Ensures output is a single file by adjusting settings or filtering files
+ * @param {Array<{file: string, size: number, score: number}>} files 
+ * @param {number} maxChunkSize 
+ * @returns {Promise<{files: Array, maxChunkSize: number}>}
+ */
+async function ensureSingleFileOutput(files, maxChunkSize) {
+  const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+  
+  // If total size is within limits, no changes needed
+  if (totalSize <= maxChunkSize) {
+    return { files, maxChunkSize };
+  }
+
+  // Show warning and get user choice
+  const message = 
+    `⚠️ The total size (${(totalSize / 1024 / 1024).toFixed(1)}MB) exceeds the current limit.\n\n` +
+    `Choose how to proceed:`;
+  
+  const INCREASE_LIMIT = 'Increase token limit';
+  const FILTER_FILES = 'Filter to smallest files';
+  const CANCEL = 'Cancel';
+  
+  const choice = await vscode.window.showWarningMessage(
+    message,
+    { modal: true },
+    INCREASE_LIMIT,
+    FILTER_FILES,
+    CANCEL
+  );
+
+  if (choice === CANCEL || !choice) {
+    throw new Error('Operation cancelled by user');
+  }
+
+  if (choice === INCREASE_LIMIT) {
+    // Calculate required limit (add 20% buffer)
+    const requiredLimit = Math.ceil(totalSize * 1.2);
+    return { files, maxChunkSize: requiredLimit };
+  }
+
+  if (choice === FILTER_FILES) {
+    // Sort by size and filter to fit within current limit
+    const sortedFiles = files
+      .sort((a, b) => a.size - b.size);
+    
+    let currentSize = 0;
+    const filteredFiles = [];
+    
+    for (const file of sortedFiles) {
+      if (currentSize + file.size > maxChunkSize) break;
+      filteredFiles.push(file);
+      currentSize += file.size;
+    }
+
+    if (filteredFiles.length === 0) {
+      throw new Error('No files small enough to fit within the limit. Try increasing the token limit.');
+    }
+
+    return { files: filteredFiles, maxChunkSize };
+  }
+
+  return { files, maxChunkSize };
 }
 
 /**
@@ -561,6 +638,154 @@ function getDetailedErrorMessage(error) {
 }
 
 async function activate(context) {
+  // Register the create/edit .flatten_ignore command
+  const createIgnoreCmd = vscode.commands.registerCommand('flatten-repo.createFlattenIgnore', async () => {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) {
+      vscode.window.showErrorMessage('No workspace folder open.');
+      return;
+    }
+    
+    const rootPath = workspaceFolders[0].uri.fsPath;
+    const flattenedDir = path.join(rootPath, 'flattened');
+    await fs.mkdir(flattenedDir, { recursive: true });
+    
+    const flattenIgnorePath = path.join(flattenedDir, '.flatten_ignore');
+    const defaultIgnoreContent = `# .flatten_ignore
+# This file controls which files and directories are ignored or explicitly included during flattening.
+# Use glob patterns here. When a directory is specified without wildcards, it is automatically treated as "directory/**".
+#
+# --------------------------
+# Global Ignore Patterns:
+# These patterns are always ignored, regardless of other settings
+global:
+# Build and dependency directories
+node_modules
+bower_components
+vendor
+dist
+build
+out
+target
+tmp
+temp
+.cache
+__pycache__
+.git
+.vscode
+.idea
+.pnp
+.jest
+.mocha
+.nyc_output
+test-results
+reports
+.gradle
+android
+ios
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+composer.lock
+Gemfile.lock
+poetry.lock
+requirements.txt
+go.sum
+Cargo.lock
+# Generated files
+*.min.js
+*.min.css
+*.map
+*.bundle.*
+*.chunk.*
+# Documentation
+docs/api
+docs/generated
+api-docs
+jsdoc
+javadoc
+swagger
+# Test and example files
+test
+tests
+spec
+__tests__
+__mocks__
+fixtures
+mocks
+stubs
+test-data
+test-utils
+testing-utils
+examples
+demo
+samples
+# Environment and configuration
+.env
+.env.*
+config
+configs
+settings
+# IDE and editor files
+.vscode
+.idea
+.vs
+.project
+.settings
+.classpath
+.factorypath
+# Version control
+.git
+.svn
+.hg
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.log
+logs
+# --------------------------
+# Local Whitelist Patterns:
+# These patterns are always included, even if they match global ignore patterns
+whitelist:
+# Example:
+# src/**
+# lib/**/*.js
+# --------------------------
+# Local Blacklist Patterns:
+# These patterns are ignored in addition to global patterns
+blacklist:
+# Example:
+# test/**
+# *.spec.js
+# --------------------------
+# Settings:
+# Configure token limits and other processing options
+settings:
+# Token limits for different LLMs:
+# - Claude 3.7: 128k tokens
+# - ChatGPT 4o: 128k tokens
+# - ChatGPT o3-mini-high: 200k tokens
+# - Claude 2: 100k tokens
+# - Anthropic Claude 3 Opus: 200k tokens
+# - Cohere Command: 32k tokens
+# - Google PaLM 2: 8k tokens
+# - Meta LLaMA 2: 4k tokens
+maxTokenLimit: 50000
+maxTokensPerFile: 25000
+# Processing options
+useGitIgnore: true
+maxConcurrentFiles: 4
+`;
+
+    await ensureFile(flattenIgnorePath, defaultIgnoreContent);
+    
+    // Open the file in the editor
+    const doc = await vscode.workspace.openTextDocument(flattenIgnorePath);
+    await vscode.window.showTextDocument(doc);
+  });
+
   let disposable = vscode.commands.registerCommand('flatten-repo.flattenProjectToTxt', async () => {
     try {
       const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -683,36 +908,24 @@ async function activate(context) {
           // Sort by score descending
           scoredFiles.sort((a, b) => b.score - a.score);
           
-          // Estimate number of output files
-          const { estimatedFiles, totalSize } = await estimateOutputFiles(
+          // Estimate output files and ensure single file if possible
+          const { estimatedFiles, totalSize, suggestions } = await estimateOutputFiles(
             scoredFiles,
             maxChunkSize
           );
-          
-          if (estimatedFiles > 10) {
-            const { suggestions, patterns } = getSuggestions(
-              settings.maxTokenLimit,
-              estimatedFiles,
-              ignoreRules.blacklist
-            );
-            
-            const message = 
-              `This operation will create ${estimatedFiles} files ` +
-              `(total size: ${(totalSize / 1024 / 1024).toFixed(1)}MB).\n\n` +
-              `${suggestions.length ? `Suggestions to reduce the number of files:\n${suggestions.join('\n')}\n\n` : ''}` +
-              `Choose how to proceed:`;
-            
-            const PROCEED = 'Proceed with all files';
-            const SMALL_FILES = 'Process only smallest non-library files (50k tokens)';
-            const UPDATE_IGNORE = 'Add suggested patterns to .flatten_ignore';
+
+          // Show warning if multiple files would be created
+          if (estimatedFiles > 1) {
+            const message = suggestions.join('\n');
+            const PROCEED = 'Proceed anyway';
+            const OPTIMIZE = 'Optimize for single file';
             const CANCEL = 'Cancel';
             
             const choice = await vscode.window.showWarningMessage(
               message,
               { modal: true },
               PROCEED,
-              SMALL_FILES,
-              UPDATE_IGNORE,
+              OPTIMIZE,
               CANCEL
             );
             
@@ -720,42 +933,14 @@ async function activate(context) {
               throw new Error('Operation cancelled by user');
             }
             
-            if (choice === UPDATE_IGNORE && patterns.length > 0) {
-              // Update .flatten_ignore with new patterns
-              const flattenIgnorePath = path.join(rootPath, '.flatten_ignore');
-              let content = await fs.readFile(flattenIgnorePath, 'utf8');
-              const newPatterns = patterns.map(p => p).join('\n');
-              content = content.replace(/blacklist:\n/, `blacklist:\n${newPatterns}\n`);
-              await fs.writeFile(flattenIgnorePath, content, 'utf8');
-              throw new Error('Updated .flatten_ignore with new patterns. Please run the flatten command again.');
+            if (choice === OPTIMIZE) {
+              const result = await ensureSingleFileOutput(scoredFiles, maxChunkSize);
+              scoredFiles = result.files;
+              maxChunkSize = result.maxChunkSize;
             }
-            
-            if (choice === SMALL_FILES) {
-              // Filter to only include smallest non-library files up to 50k tokens
-              const smallestFiles = scoredFiles
-                .filter(f => !matchesPatterns(path.relative(rootPath, f.file), DEFAULT_LIBRARY_PATTERNS))
-                .sort((a, b) => a.size - b.size);
-              
-              let totalTokens = 0;
-              const tokenLimit = 50000;
-              const selectedFiles = [];
-              
-              for (const file of smallestFiles) {
-                const estimatedTokens = file.size / 4;
-                if (totalTokens + estimatedTokens > tokenLimit) break;
-                selectedFiles.push(file);
-                totalTokens += estimatedTokens;
-              }
-              
-              processFiles = selectedFiles;
-            } else {
-              processFiles = scoredFiles;
-            }
-          } else {
-            processFiles = scoredFiles;
           }
           
-          if (processFiles.length === 0) {
+          if (scoredFiles.length === 0) {
             throw new Error('No files to process after filtering. Try adjusting your settings or using "Proceed with all files".');
           }
           
@@ -763,7 +948,7 @@ async function activate(context) {
           tracker.increment('Processing files...');
           const batchSize = 10;
           const batches = [];
-          const sortedFiles = processFiles.map(f => f.file);
+          const sortedFiles = scoredFiles.map(f => f.file);
           
           const results = await processFilesInParallel(sortedFiles, rootPath, maxFileSize);
           
@@ -812,7 +997,7 @@ async function activate(context) {
         } catch (error) {
           const errorMessage = getDetailedErrorMessage(error);
           vscode.window.showErrorMessage(`Failed during operation: ${errorMessage}`);
-          throw error; // Re-throw to be caught by outer try-catch
+          throw error;
         }
       });
     } catch (error) {

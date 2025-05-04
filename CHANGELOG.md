@@ -110,3 +110,32 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [0.12.2] - 2024-03-26
 - Initial marketplace release
+
+## [1.0.1] - 2024-05-04
+
+### Added
+- Smart file analysis with detailed insights
+- Interactive configuration setup
+- File size visualization
+- Smart suggestions for optimization
+- Progress preview functionality
+- Output preview feature
+- Recovery options for failed operations
+- Performance optimizations with caching
+- Documentation integration
+- Version control integration
+- Custom configuration templates
+- Batch processing support
+
+### Changed
+- Improved error handling and user feedback
+- Enhanced file processing efficiency
+- Better organization of configuration options
+- More comprehensive ignore patterns
+- Optimized memory usage for large files
+
+### Fixed
+- Directory creation issues
+- Progress tracking accuracy
+- File system operation stability
+- Error recovery mechanisms

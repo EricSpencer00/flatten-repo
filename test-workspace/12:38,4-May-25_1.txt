@@ -1,0 +1,205 @@
+=== Directory Tree ===
+├─ 12:38,4-May-25_1.txt
+├─ README.md
+├─ src
+│  ├─ index.js
+│  └─ test.js
+└─ test
+   └─ test.js
+
+
+
+
+=== FILE: src/index.js ===
+/**
+ * Main application entry point
+ */
+function main() {
+  console.log('Hello, World!');
+  return 42;
+}
+
+// Export the main function
+module.exports = main;
+
+
+=== FILE: src/test.js ===
+function test() { return true; }
+
+
+=== FILE: 12:38,4-May-25_1.txt ===
+=== Directory Tree ===
+├─ flattened
+│  └─ 12:37,4-May-25_1.txt
+├─ README.md
+├─ src
+│  ├─ index.js
+│  └─ test.js
+└─ test
+   └─ test.js
+
+
+
+
+=== FILE: src/index.js ===
+/**
+ * Main application entry point
+ */
+function main() {
+  console.log('Hello, World!');
+  return 42;
+}
+
+// Export the main function
+module.exports = main;
+
+
+=== FILE: src/test.js ===
+function test() { return true; }
+
+
+=== FILE: README.md ===
+# Test Workspace
+
+This is a test workspace for the flatten-repo extension.
+
+## Structure
+
+- `src/` - Source code
+- `test/` - Test files
+- `docs/` - Documentation
+- `node_modules/` - Dependencies
+
+## Files
+
+- `src/index.js` - Main application entry point
+- `test/test.js` - Test file for the main application
+- `README.md` - This file
+
+## Purpose
+
+This workspace is used to test the flatten-repo extension's functionality, including:
+- File flattening
+- Ignore patterns
+- Token limits
+- Output formatting 
+
+=== FILE: flattened/12:37,4-May-25_1.txt ===
+=== Directory Tree ===
+├─ README.md
+├─ src
+│  ├─ index.js
+│  └─ test.js
+└─ test
+   └─ test.js
+
+
+
+
+=== FILE: README.md ===
+# Test Workspace
+
+This is a test workspace for the flatten-repo extension.
+
+## Structure
+
+- `src/` - Source code
+- `test/` - Test files
+- `docs/` - Documentation
+- `node_modules/` - Dependencies
+
+## Files
+
+- `src/index.js` - Main application entry point
+- `test/test.js` - Test file for the main application
+- `README.md` - This file
+
+## Purpose
+
+This workspace is used to test the flatten-repo extension's functionality, including:
+- File flattening
+- Ignore patterns
+- Token limits
+- Output formatting 
+
+=== FILE: src/index.js ===
+/**
+ * Main application entry point
+ */
+function main() {
+  console.log('Hello, World!');
+  return 42;
+}
+
+// Export the main function
+module.exports = main;
+
+
+=== FILE: src/test.js ===
+function test() { return true; }
+
+
+=== FILE: test/test.js ===
+/**
+ * Test file for the main application
+ */
+const main = require('../src/index');
+
+describe('Main Application', () => {
+  it('should return 42', () => {
+    const result = main();
+    expect(result).toBe(42);
+  });
+}); 
+
+=== FILE: test/test.js ===
+/**
+ * Test file for the main application
+ */
+const main = require('../src/index');
+
+describe('Main Application', () => {
+  it('should return 42', () => {
+    const result = main();
+    expect(result).toBe(42);
+  });
+}); 
+
+=== FILE: README.md ===
+# Test Workspace
+
+This is a test workspace for the flatten-repo extension.
+
+## Structure
+
+- `src/` - Source code
+- `test/` - Test files
+- `docs/` - Documentation
+- `node_modules/` - Dependencies
+
+## Files
+
+- `src/index.js` - Main application entry point
+- `test/test.js` - Test file for the main application
+- `README.md` - This file
+
+## Purpose
+
+This workspace is used to test the flatten-repo extension's functionality, including:
+- File flattening
+- Ignore patterns
+- Token limits
+- Output formatting 
+
+=== FILE: test/test.js ===
+/**
+ * Test file for the main application
+ */
+const main = require('../src/index');
+
+describe('Main Application', () => {
+  it('should return 42', () => {
+    const result = main();
+    expect(result).toBe(42);
+  });
+}); 

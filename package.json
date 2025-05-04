@@ -2,12 +2,12 @@
   "publisher": "EricSpencer",
   "name": "flatten-repo",
   "displayName": "Flatten Repository",
-  "description": "Efficiently flatten your codebase into text files for LLMs with smart file filtering and chunking",
-  "version": "1.0.0",
+  "description": "Flatten your codebase into a single file for easy sharing and analysis",
+  "version": "1.0.1",
   "license": "MIT",
   "logo": "static/logo-optimized.png",
   "engines": {
-    "vscode": "^1.85.1"
+    "vscode": "^1.85.0"
   },
   "categories": [
     "Other",

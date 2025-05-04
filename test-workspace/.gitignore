@@ -1,8 +1,3 @@
-# Test files and directories
-test-workspace/
-test/
-coverage/
-
 # Dependencies
 node_modules/
 package-lock.json
@@ -35,23 +30,11 @@ yarn-error.log*
 .flattened/
 flattened/
 
+# Test coverage
+coverage/
+.nyc_output/
+
 # Environment variables
 .env
 .env.local
 .env.*.local
-
-# Documentation
-docs/
-*.md
-!README.md
-!CHANGELOG.md
-
-.vscode/**
-.vscode-test/**
-.gitignore
-.yarnrc
-vsc-extension-quickstart.md
-**/jsconfig.json
-**/*.map
-**/eslint.config.mjs
-**/.vscode-test.*
