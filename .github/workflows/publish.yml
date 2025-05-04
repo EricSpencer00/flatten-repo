@@ -1,156 +1,32 @@
 # .github/workflows/publish.yml
-name: Publish VS Code Extension
+name: Publish Extension
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to publish (e.g., 1.2.3)'
-        required: false
-        type: string
-
-permissions:
-  contents: write
-  packages: write
-  pull-requests: write
 
 jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Validate Version Format
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.version }}" != "" ]]; then
-            if ! [[ "${{ github.event.inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "::error::Invalid version format. Must be in format X.Y.Z"
-              exit 1
-            fi
-          fi
-
-  test:
-    needs: validate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: |
-          npm ci
-          if [ $? -ne 0 ]; then
-            echo "::error::Failed to install dependencies"
-            exit 1
-          fi
-
-      - name: Run Tests
-        run: |
-          npm test
-          if [ $? -ne 0 ]; then
-            echo "::error::Tests failed"
-            exit 1
-          fi
-
   publish:
-    needs: [validate, test]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
+      - uses: actions/checkout@v4
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: Install Dependencies
-        run: |
-          npm ci
-          if [ $? -ne 0 ]; then
-            echo "::error::Failed to install dependencies"
-            exit 1
-          fi
-
-      - name: Set Version
-        id: version
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.version }}" != "" ]]; then
-            VERSION="${{ github.event.inputs.version }}"
-          elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/v}"
-          else
-            VERSION=$(jq -r .version package.json)
-          fi
+          node-version: '20.x'
           
-          # Validate version format
-          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Invalid version format: $VERSION"
-            exit 1
-          fi
-          
-          echo "Setting version to: $VERSION"
-          jq ".version = \"$VERSION\"" package.json > temp.json && mv temp.json package.json
-          echo "new_version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Install vsce
-        run: |
-          npm install -g @vscode/vsce
-          if [ $? -ne 0 ]; then
-            echo "::error::Failed to install vsce"
-            exit 1
-          fi
-
-      - name: Package Extension
-        run: |
-          vsce package --no-dependencies
-          if [ $? -ne 0 ]; then
-            echo "::error::Failed to package extension"
-            exit 1
-          fi
-
-      - name: Verify Package
-        run: |
-          VSIX=$(ls *.vsix)
-          if [ -z "$VSIX" ]; then
-            echo "::error::No VSIX file found"
-            exit 1
-          fi
-          echo "Found VSIX file: $VSIX"
-
-      - name: Publish to Marketplace
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Run tests
+        run: npm test
+        
+      - name: Package extension
+        run: npm run package
+        
+      - name: Publish extension
+        run: npm run publish
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: |
-          if [ -z "$VSCE_PAT" ]; then
-            echo "::error::VSCE_PAT is not set"
-            exit 1
-          fi
-          vsce publish --pat $VSCE_PAT
-          if [ $? -ne 0 ]; then
-            echo "::error::Failed to publish extension"
-            exit 1
-          fi
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          generate_release_notes: true
-          files: |
-            *.vsix

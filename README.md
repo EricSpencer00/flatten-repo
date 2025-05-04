@@ -1,165 +1,108 @@
-# 📄 flatten-repo 
+# Flatten Repository
 
-[![Publish Extension](https://github.com/EricSpencer00/flatten-repo/actions/workflows/publish.yml/badge.svg)](https://github.com/EricSpencer00/flatten-repo/actions/workflows/publish.yml)
+A VS Code extension that helps you flatten your codebase into a single file for easy sharing and analysis.
 
-**Flatten your entire codebase into clean, readable `.txt` files — optimized for LLMs like ChatGPT, Claude, and Gemini.**
+## Features
 
----
+- **Smart File Analysis**
+  - Detailed insights about your codebase
+  - File size visualization
+  - Smart suggestions for optimization
+  - Progress preview functionality
 
-## ✨ Features (v0.12.0)
+- **Interactive Configuration**
+  - Guided setup for `.flatten_ignore`
+  - Custom configuration templates
+  - Version control integration
+  - Batch processing support
 
-- 🚀 **High Performance**
-  - Parallel file processing with configurable concurrency
-  - Memory-efficient chunking for large codebases
-  - Smart content truncation for oversized files
-  
-- 🎯 **Smart File Selection**
-  - Intelligent scoring system for file importance
-  - Configurable file extensions and ignore patterns
-  - Support for whitelist and blacklist rules
-  
-- 📊 **Enhanced Progress Tracking**
-  - Detailed progress reporting with step counts
-  - Clear error messages with troubleshooting hints
-  - Cancellation support at any stage
-  
-- 🔧 **Flexible Configuration**
-  - Single `.flatten_ignore` file for all settings
-  - Token limit customization per LLM model
-  - Project-specific overrides via VS Code settings
+- **File Processing**
+  - Smart file filtering
+  - Memory-efficient chunking
+  - Progress tracking
+  - Error recovery
 
----
+- **Output Management**
+  - Single file output
+  - Size optimization
+  - Format preservation
+  - Documentation integration
 
-## 🚀 Quick Start
+## Installation
 
-1. Install from VS Code Marketplace
-2. Open your project folder
-3. Press `Cmd+Shift+P` (Mac) or `Ctrl+Shift+P` (Windows/Linux)
-4. Type `Flatten Project to TXT` and press Enter
-5. Find your flattened files in the `/flattened` directory
+1. Open VS Code
+2. Go to the Extensions view (Ctrl+Shift+X)
+3. Search for "Flatten Repository"
+4. Click Install
 
----
+## Usage
 
-## ⚙️ Configuration Options
+1. Open your project in VS Code
+2. Press `Ctrl+Shift+P` to open the command palette
+3. Type "Flatten Repository" and select one of the commands:
+   - "Flatten Project to TXT"
+   - "Create/Edit .flatten_ignore File"
 
-### VS Code Settings
+## Configuration
 
-```json
-{
-  "flattenRepo.includeExtensions": [
-    ".ts", ".tsx", ".js", ".jsx", 
-    ".py", ".html", ".css"
-  ],
-  "flattenRepo.ignoreDirs": [
-    "node_modules", ".git", "dist"
-  ],
-  "flattenRepo.maxChunkSize": 200000,
-  "flattenRepo.maxConcurrentFiles": 4
-}
-```
+The extension can be configured through:
 
-### .flatten_ignore
+1. `.flatten_ignore` file in your project root
+2. VS Code settings
+3. Command palette options
 
-```txt
+### .flatten_ignore Example
+
+```ini
 # Global ignore patterns
-global:
-node_modules
-.git
-dist
-build
+[global]
+node_modules/
+dist/
+build/
+.flattened/
 
-# Optional whitelist
-whitelist:
-src/**/*.ts
-lib/**/*.js
+# Local whitelist patterns
+[whitelist]
+src/main.js
+test/main.test.js
 
-# Optional blacklist
-blacklist:
-**/*.test.ts
-**/*.spec.js
-.env
+# Local blacklist patterns
+[blacklist]
+test/coverage/
+docs/api/
 
-# Performance settings
-settings:
-maxTokenLimit: 128000    # Claude 3.7, GPT-4
-maxTokensPerFile: 50000  # Per file limit
-maxConcurrentFiles: 4    # Parallel processing
+# Settings
+[settings]
+maxTokenLimit=8000
+maxConcurrentFiles=10
+useGitIgnore=true
 ```
 
----
+## VS Code Settings
 
-## 📊 Performance Tips
+- `flattenRepo.includeExtensions`: File extensions to include
+- `flattenRepo.ignoreDirs`: Directory names to ignore
+- `flattenRepo.useGitIgnore`: Use .gitignore patterns
+- `flattenRepo.maxChunkSize`: Maximum characters per chunk
+- `flattenRepo.globalWhitelist`: Global include patterns
+- `flattenRepo.globalBlacklist`: Global exclude patterns
 
-- **Memory Usage**: Adjust `maxTokensPerFile` for large files
-- **Speed**: Configure `maxConcurrentFiles` based on your CPU
-- **Size**: Use whitelist/blacklist to focus on important code
-- **Efficiency**: Enable parallel processing for faster results
-
----
-
-## 🔍 Advanced Features
-
-### File Scoring System
-
-Files are scored based on:
-- 📏 Size (smaller files preferred)
-- 📂 Location (src/lib folders prioritized)
-- 📝 File type (source code > config files)
-- 🕒 Modification date (recent changes scored higher)
-
-### Error Handling
-
-Detailed error messages for common issues:
-- File access permissions
-- Memory limitations
-- System resource constraints
-- Invalid configurations
-
----
-
-## 🐞 Known Limitations
-
-- Binary files not supported
-- Image files excluded
-- Some complex glob patterns may need tweaking
-- Maximum file size limit of 50MB
-
----
-
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
-### Development Setup
+## License
 
-```bash
-git clone https://github.com/EricSpencer00/flatten-repo.git
-cd flatten-repo
-npm install
-code .
-```
+MIT License - see [LICENSE](LICENSE) for details
 
----
+## Support
 
-## 📈 Roadmap
+- [GitHub Issues](https://github.com/EricSpencer00/flatten-repo/issues)
+- [Documentation](https://github.com/EricSpencer00/flatten-repo#readme)
 
-- [ ] Graphical UI for configuration
-- [ ] Custom output formatters
-- [ ] Multi-model export formats
-- [ ] Token count estimation
-- [ ] Incremental flattening
-- [ ] Project statistics dashboard
+## Version History
 
----
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
----
-
-Made with ❤️ by Eric Spencer. Star ⭐ the repo if you find it useful!
+See [CHANGELOG.md](CHANGELOG.md) for version history and changes.
