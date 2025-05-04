@@ -1,22 +1,34 @@
 {
   "publisher": "EricSpencer",
   "name": "flatten-repo",
-  "displayName": "flatten-repo",
-  "description": "Flattens codebase into a .txt file for LLMs",
-  "version": "0.12.1",
+  "displayName": "Flatten Repository",
+  "description": "Efficiently flatten your codebase into text files for LLMs with smart file filtering and chunking",
+  "version": "1.0.0",
   "license": "MIT",
-  "logo": "static/logo.png",
+  "logo": "static/logo-optimized.png",
   "engines": {
     "vscode": "^1.85.1"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Programming Languages",
+    "Snippets"
+  ],
+  "keywords": [
+    "flatten",
+    "codebase",
+    "llm",
+    "ai",
+    "text",
+    "export",
+    "code-to-text",
+    "documentation"
   ],
   "main": "./extension.js",
   "contributes": {
     "configuration": {
       "type": "object",
-      "title": "Flatten Repo",
+      "title": "Flatten Repository",
       "properties": {
         "flattenRepo.includeExtensions": {
           "type": "array",
@@ -84,7 +96,8 @@
             "CHANGELOG",
             "CONTRIBUTING.md"
           ],
-          "description": "File extensions to include when flattening."
+          "description": "File extensions to include when flattening.",
+          "scope": "window"
         },
         "flattenRepo.ignoreDirs": {
           "type": "array",
@@ -115,38 +128,45 @@
             "android",
             "ios"
           ],
-          "description": "Directory names to ignore."
+          "description": "Directory names to ignore.",
+          "scope": "window"
         },
         "flattenRepo.useGitIgnore": {
           "type": "boolean",
           "default": true,
-          "description": "If true, also ignore files and directories specified in the project's .gitignore."
+          "description": "If true, also ignore files and directories specified in the project's .gitignore.",
+          "scope": "window"
         },
         "flattenRepo.maxChunkSize": {
           "type": "number",
           "default": 0,
-          "description": "Maximum number of characters per file chunk."
+          "description": "Maximum number of characters per file chunk.",
+          "scope": "window"
         },
         "flattenRepo.globalWhitelist": {
           "type": "array",
           "default": [],
-          "description": "Glob patterns for files to always include (applied globally across all repos)."
+          "description": "Glob patterns for files to always include (applied globally across all repos).",
+          "scope": "window"
         },
         "flattenRepo.globalBlacklist": {
           "type": "array",
           "default": [],
-          "description": "Glob patterns for files to always exclude (applied globally across all repos)."
+          "description": "Glob patterns for files to always exclude (applied globally across all repos).",
+          "scope": "window"
         }
       }
     },
     "commands": [
       {
         "command": "flatten-repo.flattenProjectToTxt",
-        "title": "Flatten Project to TXT"
+        "title": "Flatten Project to TXT",
+        "category": "Flatten Repository"
       },
       {
         "command": "flatten-repo.createFlattenIgnore",
-        "title": "Create/Edit .flatten_ignore File"
+        "title": "Create/Edit .flatten_ignore File",
+        "category": "Flatten Repository"
       }
     ]
   },
@@ -163,13 +183,17 @@
     "pretest": "npm run lint",
     "test": "npm run lint",
     "vscode-test": "vscode-test",
-    "full-test": "npm run lint && vscode-test"
+    "full-test": "npm run lint && vscode-test",
+    "package": "vsce package",
+    "publish": "vsce publish",
+    "optimize-logo": "pngquant --quality=65-80 static/logo.png --output static/logo-optimized.png"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/vscode": "^1.85.1",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^8.56.0"
   }
 }

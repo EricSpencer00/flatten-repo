@@ -79,3 +79,34 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Progress reporting
 - Configuration via `.flatten_ignore`
 - VS Code settings integration
+
+## [1.0.0] - 2024-03-26
+
+### Added
+- Improved error handling with detailed error messages
+- Better progress tracking during file processing
+- Configuration scopes for better settings management
+- Additional keywords for better marketplace discoverability
+- Command categorization in the command palette
+- Optimized logo for faster extension loading
+
+### Changed
+- Updated display name to "Flatten Repository"
+- Improved extension description
+- Enhanced error messages with more context
+- Optimized package size (reduced by 96%)
+- Better configuration descriptions
+
+### Fixed
+- Error handling in file processing
+- Directory creation issues
+- Progress tracking accuracy
+- Configuration validation
+
+## [0.12.3] - 2024-03-26
+- Package size optimization
+- Added more categories and keywords
+- Added npm scripts for common tasks
+
+## [0.12.2] - 2024-03-26
+- Initial marketplace release

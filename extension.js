@@ -31,9 +31,16 @@ function toRegex(glob) {
 async function ensureFile(filePath, defaultContent) {
   try {
     await fs.access(filePath);
-  } catch (_) {
-    await fs.writeFile(filePath, defaultContent, 'utf-8');
-    vscode.window.showInformationMessage(`✅ Created ${path.basename(filePath)} in /flattened`);
+  } catch (error) {
+    try {
+      await fs.mkdir(path.dirname(filePath), { recursive: true });
+      await fs.writeFile(filePath, defaultContent, 'utf-8');
+      vscode.window.showInformationMessage(`✅ Created ${path.basename(filePath)} in /flattened`);
+    } catch (writeError) {
+      const errorMessage = `Failed to create ${path.basename(filePath)}: ${getDetailedErrorMessage(writeError)}`;
+      vscode.window.showErrorMessage(errorMessage);
+      throw new Error(errorMessage);
+    }
   }
 }
 
@@ -203,6 +210,7 @@ async function scoreFile(filePath, stats) {
 async function processFilesInParallel(files, rootPath, maxFileSize, maxConcurrent = 4) {
   const results = [];
   const batches = [];
+  const errors = [];
   
   // Split files into batches
   for (let i = 0; i < files.length; i += maxConcurrent) {
@@ -213,21 +221,29 @@ async function processFilesInParallel(files, rootPath, maxFileSize, maxConcurren
   for (const batch of batches) {
     const batchPromises = batch.map(async file => {
       try {
-        const content = await fs.readFile(file, 'utf-8');
-        const rel = path.relative(rootPath, file);
-        if (content.length > maxFileSize) {
-          console.warn(`⚠️ Skipping ${rel} (too large)`);
+        const stats = await fs.stat(file);
+        if (stats.size > maxFileSize) {
+          console.warn(`⚠️ Skipping ${path.relative(rootPath, file)} (exceeds size limit of ${maxFileSize} bytes)`);
           return null;
         }
-        return { file, content, rel };
+
+        const content = await fs.readFile(file, 'utf-8');
+        const rel = path.relative(rootPath, file);
+        return { file, content, rel, stats };
       } catch (err) {
-        console.error(`Error reading ${file}:`, err);
+        const errorMessage = `Error processing ${file}: ${getDetailedErrorMessage(err)}`;
+        errors.push(errorMessage);
+        console.error(errorMessage);
         return null;
       }
     });
 
     const batchResults = await Promise.all(batchPromises);
     results.push(...batchResults.filter(r => r !== null));
+  }
+
+  if (errors.length > 0) {
+    vscode.window.showWarningMessage(`⚠️ Some files could not be processed. Check the output for details.`);
   }
 
   return results;
@@ -538,129 +554,37 @@ class ProgressTracker {
  * @returns {string}
  */
 function getDetailedErrorMessage(error) {
-  if (error.message.includes('ENOENT')) {
-    return 'File or directory not found. Please check if the path exists.';
+  if (error instanceof Error) {
+    return `${error.name}: ${error.message}\n${error.stack || ''}`;
   }
-  if (error.message.includes('EACCES')) {
-    return 'Permission denied. Please check file permissions.';
-  }
-  if (error.message.includes('EMFILE')) {
-    return 'Too many open files. Try reducing the batch size.';
-  }
-  if (error.message.includes('ENOMEM')) {
-    return 'Out of memory. Try reducing the chunk size or processing fewer files.';
-  }
-  return error.message;
+  return String(error);
 }
 
 async function activate(context) {
-  // Register the create/edit .flatten_ignore command
-  const createIgnoreCmd = vscode.commands.registerCommand('flatten-repo.createFlattenIgnore', async () => {
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders) {
-      vscode.window.showErrorMessage('No workspace folder open.');
-      return;
-    }
-    
-    const rootPath = workspaceFolders[0].uri.fsPath;
-    const flattenedDir = path.join(rootPath, 'flattened');
-    await fs.mkdir(flattenedDir, { recursive: true });
-    
-    const flattenIgnorePath = path.join(flattenedDir, '.flatten_ignore');
-    const defaultIgnoreContent = `# .flatten_ignore
-# This file controls which files and directories are ignored or explicitly included during flattening.
-# Use glob patterns here.
-# When a directory is specified without wildcards, it is automatically treated as "directory/**".
-#
-# --------------------------
-# Global Ignore Patterns:
-global:
-flattened
-node_modules
-.git
-dist
-build
-venv
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> ac733e4 (add default ignore paths)
-.vscode
-.idea
-__pycache__
-.gradle
-Pods
-.DS_Store
-.env
-<<<<<<< HEAD
->>>>>>> aec9ab3 (Refactor file and add global ignore patterns)
-=======
->>>>>>> ac733e4 (add default ignore paths)
-# --------------------------
-# Local Whitelist Patterns:
-whitelist:
-# Example:
-# src/**
-# lib/**/*.js
-# --------------------------
-# Local Blacklist Patterns:
-blacklist:
-# Example:
-# test/**
-# *.spec.js
-# --------------------------
-# Settings:
-# Set the token limits for flattening.
-# Suggestions:
-#   Claude 3.7: 128k tokens
-#   ChatGPT 4o: 128k tokens
-#   ChatGPT o3-mini-high: 200k tokens
-#   Claude 2: 100k tokens
-#   Anthropic Claude 3 Opus: 200k tokens
-#   Cohere Command: 32k tokens
-#   Google PaLM 2: 8k tokens
-#   Meta LLaMA 2: 4k tokens
-settings:
-maxTokenLimit: 50000
-maxTokensPerFile: 25000
-`;
-    await ensureFile(flattenIgnorePath, defaultIgnoreContent);
-    
-    // Open the file in the editor
-    const doc = await vscode.workspace.openTextDocument(flattenIgnorePath);
-    await vscode.window.showTextDocument(doc);
-  });
-  
-  // Register the main flatten command with improvements
-  const flattenCmd = vscode.commands.registerCommand('flatten-repo.flattenProjectToTxt', async () => {
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders) {
-      vscode.window.showErrorMessage('No workspace folder open.');
-      return;
-    }
-    
-    const rootPath = workspaceFolders[0].uri.fsPath;
-    const flattenedDir = path.join(rootPath, 'flattened');
-    
+  let disposable = vscode.commands.registerCommand('flatten-repo.flattenProjectToTxt', async () => {
     try {
-      await fs.mkdir(flattenedDir, { recursive: true });
-    } catch (err) {
-      console.error('Failed to create flattened directory:', err);
-      vscode.window.showErrorMessage('Failed to create /flattened directory.');
-      return;
-    }
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders) {
+        throw new Error('No workspace folder is open');
+      }
 
-    // Initialize variables at the top level so they're available throughout the function
-    let processFiles = [];
-    const fileList = [];
-    let maxChunkSize = 0;
-    let maxFileSize = 0;
-    
-    try {
+      const rootPath = workspaceFolders[0].uri.fsPath;
+      const config = vscode.workspace.getConfiguration('flattenRepo');
+      
+      // Validate configuration
+      if (!Array.isArray(config.get('includeExtensions'))) {
+        throw new Error('Invalid configuration: includeExtensions must be an array');
+      }
+      if (!Array.isArray(config.get('ignoreDirs'))) {
+        throw new Error('Invalid configuration: ignoreDirs must be an array');
+      }
+      if (typeof config.get('useGitIgnore') !== 'boolean') {
+        throw new Error('Invalid configuration: useGitIgnore must be a boolean');
+      }
+
       await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: 'Analyzing repository...',
+        title: 'Flattening repository...',
         cancellable: true
       }, async (progress, token) => {
         try {
@@ -670,12 +594,11 @@ maxTokensPerFile: 25000
           });
           
           // Get configuration and settings
-          const config = vscode.workspace.getConfiguration('flattenRepo');
           const includeExtensions = config.get('includeExtensions', ['.js', '.jsx', '.ts', '.tsx', '.py', '.html', '.css']);
           
           // Get ignore rules including default library patterns
           const ignoreRules = await parseFlattenIgnore(
-            path.join(flattenedDir, '.flatten_ignore'),
+            path.join(rootPath, '.flatten_ignore'),
             rootPath
           );
           
@@ -689,8 +612,8 @@ maxTokensPerFile: 25000
           
           // Get settings
           const settings = ignoreRules.settings || {};
-          maxChunkSize = (settings.maxTokenLimit || 50000) * 4; // 4 chars per token
-          maxFileSize = (settings.maxTokensPerFile || 25000) * 4;
+          const maxChunkSize = (settings.maxTokenLimit || 50000) * 4; // 4 chars per token
+          const maxFileSize = (settings.maxTokensPerFile || 25000) * 4;
           
           const tracker = new ProgressTracker(progress, token);
           
@@ -737,6 +660,7 @@ maxTokensPerFile: 25000
           }
           
           // Collect files
+          const fileList = [];
           await collect(rootPath);
           
           if (fileList.length === 0) {
@@ -798,7 +722,7 @@ maxTokensPerFile: 25000
             
             if (choice === UPDATE_IGNORE && patterns.length > 0) {
               // Update .flatten_ignore with new patterns
-              const flattenIgnorePath = path.join(flattenedDir, '.flatten_ignore');
+              const flattenIgnorePath = path.join(rootPath, '.flatten_ignore');
               let content = await fs.readFile(flattenIgnorePath, 'utf8');
               const newPatterns = patterns.map(p => p).join('\n');
               content = content.replace(/blacklist:\n/, `blacklist:\n${newPatterns}\n`);
@@ -862,7 +786,7 @@ maxTokensPerFile: 25000
             
             const treeString = buildDirectoryTree(chunks[i].files);
             const header = `=== Directory Tree ===\n${treeString}\n\n`;
-            const filePath = path.join(flattenedDir, `${timestamp}_${i + 1}.txt`);
+            const filePath = path.join(rootPath, `${timestamp}_${i + 1}.txt`);
             await fs.writeFile(filePath, header + chunks[i].content, 'utf-8');
           }
           
@@ -885,25 +809,20 @@ maxTokensPerFile: 25000
             console.error('Failed to update .gitignore:', err);
             // Non-critical error, don't throw
           }
-        } catch (err) {
-          const detailedMessage = getDetailedErrorMessage(err);
-          vscode.window.showErrorMessage(`Error during flattening: ${detailedMessage}`);
-          throw err;
+        } catch (error) {
+          const errorMessage = getDetailedErrorMessage(error);
+          vscode.window.showErrorMessage(`Failed during operation: ${errorMessage}`);
+          throw error; // Re-throw to be caught by outer try-catch
         }
       });
-    } catch (err) {
-      console.error('Error during flattening:', err);
-      if (err.message.includes('Updated .flatten_ignore')) {
-        vscode.window.showInformationMessage(err.message);
-      } else if (err.message === 'Operation cancelled by user') {
-        vscode.window.showInformationMessage('Flattening operation cancelled.');
-      } else {
-        vscode.window.showErrorMessage(`Error during flattening: ${err.message}`);
-      }
+    } catch (error) {
+      const errorMessage = getDetailedErrorMessage(error);
+      vscode.window.showErrorMessage(`Failed to flatten repository: ${errorMessage}`);
+      console.error(errorMessage);
     }
   });
-  
-  context.subscriptions.push(createIgnoreCmd, flattenCmd);
+
+  context.subscriptions.push(disposable);
 }
 
 // Worker thread code
