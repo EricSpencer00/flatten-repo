@@ -1,3 +1,919 @@
+=== Directory Tree ===
+├─ .github
+│  └─ workflows
+│     ├─ auto-version-bump.yml
+│     ├─ coverage.yml
+│     └─ publish.yml
+├─ CHANGELOG.md
+├─ eslint.config.mjs
+├─ extension.js
+├─ jsconfig.json
+├─ package.json
+├─ README.md
+├─ test
+│  └─ extension.test.js
+└─ test-workspace
+   ├─ .flattened
+   │  └─ flattened.txt
+   ├─ 12:38,4-May-25_1.txt
+   ├─ analyze.js
+   ├─ build.js
+   ├─ docs
+   │  └─ README.md
+   ├─ package.json
+   ├─ README.md
+   ├─ src
+   │  ├─ index.js
+   │  ├─ main.js
+   │  └─ test.js
+   └─ test
+      ├─ main.test.js
+      └─ test.js
+
+
+
+
+=== FILE: test-workspace/src/index.js ===
+/**
+ * Main application entry point
+ */
+function main() {
+  console.log('Hello, World!');
+  return 42;
+}
+
+// Export the main function
+module.exports = main;
+
+
+=== FILE: test-workspace/src/main.js ===
+/**
+ * Main application entry point
+ * This is a sample application to test the flatten-repo extension
+ */
+
+// Import dependencies
+const fs = require('fs');
+const path = require('path');
+
+// Configuration
+const config = {
+  maxFileSize: 1024 * 1024, // 1MB
+  allowedExtensions: ['.js', '.ts', '.jsx', '.tsx'],
+  ignorePatterns: ['node_modules', 'dist', 'build']
+};
+
+/**
+ * Main function that processes files
+ * @returns {number} Status code
+ */
+function main() {
+  console.log('Starting file processing...');
+  return 42;
+}
+
+// Export the main function
+module.exports = main; 
+
+=== FILE: test-workspace/src/test.js ===
+function test() { return true; }
+
+
+=== FILE: test-workspace/analyze.js ===
+const fs = require('fs');
+const path = require('path');
+const { promisify } = require('util');
+const readFile = promisify(fs.readFile);
+const stat = promisify(fs.stat);
+
+async function analyzeCodebase() {
+  const results = {
+    totalFiles: 0,
+    totalSize: 0,
+    largestFiles: [],
+    fileTypes: {},
+    suggestions: []
+  };
+
+  async function analyzeDirectory(dir) {
+    const files = await fs.promises.readdir(dir);
+    
+    for (const file of files) {
+      const filePath = path.join(dir, file);
+      const stats = await stat(filePath);
+      
+      if (stats.isDirectory()) {
+        await analyzeDirectory(filePath);
+      } else {
+        const ext = path.extname(file);
+        const size = stats.size;
+        
+        results.totalFiles++;
+        results.totalSize += size;
+        
+        // Track file types
+        results.fileTypes[ext] = (results.fileTypes[ext] || 0) + 1;
+        
+        // Track largest files
+        results.largestFiles.push({ path: filePath, size });
+        results.largestFiles.sort((a, b) => b.size - a.size);
+        if (results.largestFiles.length > 5) {
+          results.largestFiles.pop();
+        }
+      }
+    }
+  }
+
+  await analyzeDirectory(process.cwd());
+
+  // Generate suggestions
+  if (results.totalSize > 1024 * 1024) { // If total size > 1MB
+    results.suggestions.push({
+      type: 'size',
+      message: 'Consider excluding large files from flattening',
+      files: results.largestFiles.map(f => ({
+        path: f.path,
+        size: `${(f.size / 1024).toFixed(2)} KB`
+      }))
+    });
+  }
+
+  // Format results
+  return {
+    summary: {
+      totalFiles: results.totalFiles,
+      totalSize: `${(results.totalSize / 1024).toFixed(2)} KB`,
+      fileTypes: results.fileTypes
+    },
+    largestFiles: results.largestFiles.map(f => ({
+      path: f.path,
+      size: `${(f.size / 1024).toFixed(2)} KB`
+    })),
+    suggestions: results.suggestions
+  };
+}
+
+// Run analysis and output results
+analyzeCodebase().then(results => {
+  console.log('Codebase Analysis Results:');
+  console.log('\nSummary:');
+  console.log(`Total Files: ${results.summary.totalFiles}`);
+  console.log(`Total Size: ${results.summary.totalSize}`);
+  console.log('\nFile Types:');
+  Object.entries(results.summary.fileTypes).forEach(([ext, count]) => {
+    console.log(`${ext}: ${count} files`);
+  });
+  
+  console.log('\nLargest Files:');
+  results.largestFiles.forEach(file => {
+    console.log(`${file.path}: ${file.size}`);
+  });
+  
+  console.log('\nSuggestions:');
+  results.suggestions.forEach(suggestion => {
+    console.log(`\n${suggestion.type}: ${suggestion.message}`);
+    if (suggestion.files) {
+      console.log('Affected files:');
+      suggestion.files.forEach(file => {
+        console.log(`  ${file.path}: ${file.size}`);
+      });
+    }
+  });
+}).catch(console.error); 
+
+=== FILE: test-workspace/build.js ===
+const fs = require('fs');
+const path = require('path');
+const { promisify } = require('util');
+const readFile = promisify(fs.readFile);
+const writeFile = promisify(fs.writeFile);
+const mkdir = promisify(fs.mkdir);
+const stat = promisify(fs.stat);
+
+class FlattenBuilder {
+  constructor() {
+    this.config = {
+      outputDir: '.flattened',
+      maxFileSize: 1024 * 1024, // 1MB
+      ignorePatterns: [
+        'node_modules',
+        'dist',
+        'build',
+        '.git',
+        '.flattened'
+      ]
+    };
+  }
+
+  async ensureOutputDir() {
+    try {
+      await mkdir(this.config.outputDir, { recursive: true });
+    } catch (error) {
+      if (error.code !== 'EEXIST') {
+        throw error;
+      }
+    }
+  }
+
+  async shouldIgnore(filePath) {
+    const relativePath = path.relative(process.cwd(), filePath);
+    return this.config.ignorePatterns.some(pattern => 
+      relativePath.includes(pattern) || 
+      relativePath.startsWith(pattern)
+    );
+  }
+
+  async processFile(filePath) {
+    const content = await readFile(filePath, 'utf8');
+    const stats = await stat(filePath);
+    
+    return {
+      path: filePath,
+      content,
+      size: stats.size
+    };
+  }
+
+  async build() {
+    console.log('Starting build process...');
+    await this.ensureOutputDir();
+
+    const files = [];
+    const errors = [];
+    let totalSize = 0;
+
+    async function processDirectory(dir) {
+      const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        
+        if (await this.shouldIgnore(fullPath)) {
+          continue;
+        }
+
+        if (entry.isDirectory()) {
+          await processDirectory.call(this, fullPath);
+        } else {
+          try {
+            const file = await this.processFile(fullPath);
+            files.push(file);
+            totalSize += file.size;
+          } catch (error) {
+            errors.push({
+              path: fullPath,
+              error: error.message
+            });
+          }
+        }
+      }
+    }
+
+    await processDirectory.call(this, process.cwd());
+
+    // Sort files by size
+    files.sort((a, b) => b.size - a.size);
+
+    // Generate output
+    const output = {
+      summary: {
+        totalFiles: files.length,
+        totalSize: `${(totalSize / 1024).toFixed(2)} KB`,
+        errors: errors.length
+      },
+      largestFiles: files.slice(0, 5).map(f => ({
+        path: f.path,
+        size: `${(f.size / 1024).toFixed(2)} KB`
+      })),
+      errors: errors
+    };
+
+    // Write output to file
+    const outputPath = path.join(this.config.outputDir, 'flattened.txt');
+    await writeFile(
+      outputPath,
+      JSON.stringify(output, null, 2),
+      'utf8'
+    );
+
+    // Display results
+    console.log('\nBuild Results:');
+    console.log(`Total Files Processed: ${output.summary.totalFiles}`);
+    console.log(`Total Size: ${output.summary.totalSize}`);
+    console.log(`Errors: ${output.summary.errors}`);
+    
+    if (output.largestFiles.length > 0) {
+      console.log('\nLargest Files:');
+      output.largestFiles.forEach(file => {
+        console.log(`${file.path}: ${file.size}`);
+      });
+    }
+
+    if (output.errors.length > 0) {
+      console.log('\nErrors:');
+      output.errors.forEach(error => {
+        console.log(`${error.path}: ${error.error}`);
+      });
+    }
+
+    console.log(`\nOutput written to: ${outputPath}`);
+  }
+}
+
+// Run the build process
+new FlattenBuilder().build().catch(console.error); 
+
+=== FILE: .github/workflows/auto-version-bump.yml ===
+# .github/workflows/always-pass.yml
+name: Always Pass
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Do nothing and succeed
+        run: echo "This workflow does nothing and always passes"
+
+=== FILE: .github/workflows/coverage.yml ===
+# .github/workflows/always-pass.yml
+name: Always Pass
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Do nothing and succeed
+        run: echo "This workflow does nothing and always passes"
+
+=== FILE: .github/workflows/publish.yml ===
+# .github/workflows/publish.yml
+name: Publish Extension
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Run tests
+        run: npm test
+        
+      - name: Package extension
+        run: npm run package
+        
+      - name: Publish extension
+        run: npm run publish
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+=== FILE: jsconfig.json ===
+{
+	"compilerOptions": {
+		"module": "Node16",
+		"target": "ES2022",
+		"checkJs": false,  /* Typecheck .js files. */
+		"lib": [
+			"ES2022"
+		]
+	},
+	"exclude": [
+		"node_modules"
+	]
+}
+
+
+=== FILE: package.json ===
+{
+  "publisher": "EricSpencer",
+  "name": "flatten-repo",
+  "displayName": "Flatten Repository",
+  "description": "Flatten your codebase into a single file for easy sharing and analysis",
+  "version": "1.0.1",
+  "license": "MIT",
+  "logo": "static/logo-optimized.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages",
+    "Snippets"
+  ],
+  "keywords": [
+    "flatten",
+    "codebase",
+    "llm",
+    "ai",
+    "text",
+    "export",
+    "code-to-text",
+    "documentation"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "Flatten Repository",
+      "properties": {
+        "flattenRepo.includeExtensions": {
+          "type": "array",
+          "default": [
+            ".c",
+            ".cpp",
+            ".h",
+            ".hpp",
+            ".cs",
+            ".java",
+            ".kt",
+            ".kts",
+            ".py",
+            ".rb",
+            ".rs",
+            ".go",
+            ".php",
+            ".swift",
+            ".m",
+            ".mm",
+            ".ts",
+            ".tsx",
+            ".js",
+            ".jsx",
+            ".mjs",
+            ".cjs",
+            ".lua",
+            ".sh",
+            ".bash",
+            ".ps1",
+            ".pl",
+            ".r",
+            ".sql",
+            ".dart",
+            ".scala",
+            ".groovy",
+            ".html",
+            ".htm",
+            ".css",
+            ".scss",
+            ".sass",
+            ".less",
+            ".json",
+            ".yml",
+            ".yaml",
+            ".xml",
+            ".env",
+            ".ini",
+            ".conf",
+            ".config",
+            ".toml",
+            ".gradle",
+            ".babelrc",
+            ".eslintrc",
+            ".prettierrc",
+            ".stylelintrc",
+            ".npmrc",
+            ".editorconfig",
+            ".md",
+            ".rst",
+            ".txt",
+            ".gitignore",
+            ".gitattributes",
+            "README.md",
+            "CHANGELOG",
+            "CONTRIBUTING.md"
+          ],
+          "description": "File extensions to include when flattening.",
+          "scope": "window"
+        },
+        "flattenRepo.ignoreDirs": {
+          "type": "array",
+          "default": [
+            "node_modules",
+            "bower_components",
+            "vendor",
+            "dist",
+            "build",
+            "out",
+            "target",
+            "tmp",
+            "temp",
+            ".cache",
+            "__pycache__",
+            ".git",
+            ".hg",
+            ".svn",
+            ".vscode",
+            ".idea",
+            ".pnp",
+            ".jest",
+            ".mocha",
+            ".nyc_output",
+            "test-results",
+            "reports",
+            ".gradle",
+            "android",
+            "ios"
+          ],
+          "description": "Directory names to ignore.",
+          "scope": "window"
+        },
+        "flattenRepo.useGitIgnore": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, also ignore files and directories specified in the project's .gitignore.",
+          "scope": "window"
+        },
+        "flattenRepo.maxChunkSize": {
+          "type": "number",
+          "default": 0,
+          "description": "Maximum number of characters per file chunk.",
+          "scope": "window"
+        },
+        "flattenRepo.globalWhitelist": {
+          "type": "array",
+          "default": [],
+          "description": "Glob patterns for files to always include (applied globally across all repos).",
+          "scope": "window"
+        },
+        "flattenRepo.globalBlacklist": {
+          "type": "array",
+          "default": [],
+          "description": "Glob patterns for files to always exclude (applied globally across all repos).",
+          "scope": "window"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "flatten-repo.flattenProjectToTxt",
+        "title": "Flatten Project to TXT",
+        "category": "Flatten Repository"
+      },
+      {
+        "command": "flatten-repo.createFlattenIgnore",
+        "title": "Create/Edit .flatten_ignore File",
+        "category": "Flatten Repository"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/EricSpencer00/flatten-repo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/EricSpencer00/flatten-repo/issues"
+  },
+  "homepage": "https://github.com/EricSpencer00/flatten-repo#readme",
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "npm run lint",
+    "vscode-test": "vscode-test",
+    "full-test": "npm run lint && vscode-test",
+    "package": "vsce package",
+    "publish": "vsce publish",
+    "optimize-logo": "pngquant --quality=65-80 static/logo.png --output static/logo-optimized.png"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.85.1",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^8.56.0"
+  }
+}
+
+
+=== FILE: test-workspace/package.json ===
+{
+  "name": "test-workspace",
+  "version": "1.0.0",
+  "description": "Test workspace for flatten-repo extension",
+  "main": "src/main.js",
+  "scripts": {
+    "test": "jest",
+    "build": "node build.js",
+    "lint": "eslint src/ test/",
+    "format": "prettier --write src/ test/",
+    "analyze": "node analyze.js"
+  },
+  "dependencies": {
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.0.0",
+    "@types/node": "^18.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "private": true
+} 
+
+=== FILE: CHANGELOG.md ===
+## [0.12.0] - 2024-04-02
+
+- 🚀 Version consistency update
+- ✨ Improved error handling and progress reporting
+- 🔧 Enhanced file processing and chunking
+- 📝 Better documentation and examples
+- ⚡️ Performance improvements
+- 🐛 Bug fixes and stability improvements
+
+## [0.11.0] - 2024-04-02
+
+## [0.10.0] - 2025-04-02
+
+
+## [0.9.0] - 2025-04-02
+
+
+## [0.8.0] - 2025-04-02
+
+
+## [0.7.0] - 2025-04-02
+
+
+## [0.6.0] - 2025-04-02
+
+
+## [0.5.0] - 2025-04-02
+
+
+## [0.4.0] - 2025-04-02
+
+
+## [0.3.0] - 2025-04-02
+
+
+## [0.2.0] - 2025-04-02
+
+
+## [0.1.0] - 2025-04-02
+
+# Change Log
+
+All notable changes to the "flatten-repo" extension will be documented in this file.
+
+Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+
+## [0.2.0] - 2024-04-02
+
+### Added
+- Parallel file processing with configurable concurrency
+- Memory-efficient chunking for large codebases
+- Smart content truncation for oversized files
+- Enhanced progress tracking with detailed status updates
+- Detailed error messages with troubleshooting hints
+- Cancellation support at any processing stage
+- New configuration option: `maxConcurrentFiles`
+
+### Changed
+- Improved file scoring system for better selection
+- Enhanced memory management for large files
+- Optimized chunk creation process
+- Updated default token limits for modern LLMs
+- Refined error handling with specific messages
+- Improved progress reporting
+
+### Fixed
+- Memory leaks in large file processing
+- Inconsistent file chunking behavior
+- Progress reporting accuracy
+- Error handling in file operations
+
+## [0.1.0] - 2024-03-28
+
+### Added
+- Initial release with basic flattening functionality
+- Support for glob-based ignore patterns
+- Whitelist and blacklist functionality
+- Basic file scoring system
+- Progress reporting
+- Configuration via `.flatten_ignore`
+- VS Code settings integration
+
+## [1.0.0] - 2024-03-26
+
+### Added
+- Improved error handling with detailed error messages
+- Better progress tracking during file processing
+- Configuration scopes for better settings management
+- Additional keywords for better marketplace discoverability
+- Command categorization in the command palette
+- Optimized logo for faster extension loading
+
+### Changed
+- Updated display name to "Flatten Repository"
+- Improved extension description
+- Enhanced error messages with more context
+- Optimized package size (reduced by 96%)
+- Better configuration descriptions
+
+### Fixed
+- Error handling in file processing
+- Directory creation issues
+- Progress tracking accuracy
+- Configuration validation
+
+## [0.12.3] - 2024-03-26
+- Package size optimization
+- Added more categories and keywords
+- Added npm scripts for common tasks
+
+## [0.12.2] - 2024-03-26
+- Initial marketplace release
+
+## [1.0.1] - 2024-05-04
+
+### Added
+- Smart file analysis with detailed insights
+- Interactive configuration setup
+- File size visualization
+- Smart suggestions for optimization
+- Progress preview functionality
+- Output preview feature
+- Recovery options for failed operations
+- Performance optimizations with caching
+- Documentation integration
+- Version control integration
+- Custom configuration templates
+- Batch processing support
+
+### Changed
+- Improved error handling and user feedback
+- Enhanced file processing efficiency
+- Better organization of configuration options
+- More comprehensive ignore patterns
+- Optimized memory usage for large files
+
+### Fixed
+- Directory creation issues
+- Progress tracking accuracy
+- File system operation stability
+- Error recovery mechanisms
+
+=== FILE: README.md ===
+# Flatten Repository
+
+A VS Code extension that helps you flatten your codebase into a single file for easy sharing and analysis.
+
+## Features
+
+- **Smart File Analysis**
+  - Detailed insights about your codebase
+  - File size visualization
+  - Smart suggestions for optimization
+  - Progress preview functionality
+
+- **Interactive Configuration**
+  - Guided setup for `.flatten_ignore`
+  - Custom configuration templates
+  - Version control integration
+  - Batch processing support
+
+- **File Processing**
+  - Smart file filtering
+  - Memory-efficient chunking
+  - Progress tracking
+  - Error recovery
+
+- **Output Management**
+  - Single file output
+  - Size optimization
+  - Format preservation
+  - Documentation integration
+
+## Installation
+
+1. Open VS Code
+2. Go to the Extensions view (Ctrl+Shift+X)
+3. Search for "Flatten Repository"
+4. Click Install
+
+## Usage
+
+1. Open your project in VS Code
+2. Press `Ctrl+Shift+P` to open the command palette
+3. Type "Flatten Repository" and select one of the commands:
+   - "Flatten Project to TXT"
+   - "Create/Edit .flatten_ignore File"
+
+## Configuration
+
+The extension can be configured through:
+
+1. `.flatten_ignore` file in your project root
+2. VS Code settings
+3. Command palette options
+
+### .flatten_ignore Example
+
+```ini
+# Global ignore patterns
+[global]
+node_modules/
+dist/
+build/
+.flattened/
+
+# Local whitelist patterns
+[whitelist]
+src/main.js
+test/main.test.js
+
+# Local blacklist patterns
+[blacklist]
+test/coverage/
+docs/api/
+
+# Settings
+[settings]
+maxTokenLimit=8000
+maxConcurrentFiles=10
+useGitIgnore=true
+```
+
+## VS Code Settings
+
+- `flattenRepo.includeExtensions`: File extensions to include
+- `flattenRepo.ignoreDirs`: Directory names to ignore
+- `flattenRepo.useGitIgnore`: Use .gitignore patterns
+- `flattenRepo.maxChunkSize`: Maximum characters per chunk
+- `flattenRepo.globalWhitelist`: Global include patterns
+- `flattenRepo.globalBlacklist`: Global exclude patterns
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details
+
+## Support
+
+- [GitHub Issues](https://github.com/EricSpencer00/flatten-repo/issues)
+- [Documentation](https://github.com/EricSpencer00/flatten-repo#readme)
+
+## Version History
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and changes.
+
+=== FILE: eslint.config.mjs ===
+import globals from "globals";
+
+export default [{
+    files: ["**/*.js"],
+    languageOptions: {
+        globals: {
+            ...globals.commonjs,
+            ...globals.node,
+            ...globals.mocha,
+        },
+
+        ecmaVersion: 2022,
+        sourceType: "module",
+    },
+
+    rules: {
+        "no-const-assign": "warn",
+        "no-this-before-super": "warn",
+        "no-undef": "warn",
+        "no-unreachable": "warn",
+        "no-unused-vars": "warn",
+        "constructor-super": "warn",
+        "valid-typeof": "warn",
+    },
+}];
+
+=== FILE: extension.js ===
 const vscode = require('vscode');
 const fs = require('fs').promises;
 const path = require('path');
@@ -794,9 +1710,6 @@ maxConcurrentFiles: 4
       }
 
       const rootPath = workspaceFolders[0].uri.fsPath;
-      const flattenedDir = path.join(rootPath, 'flattened');
-      await fs.mkdir(flattenedDir, { recursive: true });
-      
       const config = vscode.workspace.getConfiguration('flattenRepo');
       
       // Validate configuration
@@ -826,7 +1739,7 @@ maxConcurrentFiles: 4
           
           // Get ignore rules including default library patterns
           const ignoreRules = await parseFlattenIgnore(
-            path.join(flattenedDir, '.flatten_ignore'),
+            path.join(rootPath, '.flatten_ignore'),
             rootPath
           );
           
@@ -974,11 +1887,11 @@ maxConcurrentFiles: 4
             
             const treeString = buildDirectoryTree(chunks[i].files);
             const header = `=== Directory Tree ===\n${treeString}\n\n`;
-            const filePath = path.join(flattenedDir, `${timestamp}_${i + 1}.txt`);
+            const filePath = path.join(rootPath, `${timestamp}_${i + 1}.txt`);
             await fs.writeFile(filePath, header + chunks[i].content, 'utf-8');
           }
           
-          vscode.window.showInformationMessage(`✅ Flattened ${fileList.length} files into ${chunks.length} file(s) in /flattened directory.`);
+          vscode.window.showInformationMessage(`✅ Flattened ${fileList.length} files into ${chunks.length} file(s).`);
           
           // Update .gitignore
           const gitignorePath = path.join(rootPath, '.gitignore');
@@ -1037,3 +1950,350 @@ module.exports = {
   activate,
   deactivate
 };
+
+
+=== FILE: test/extension.test.js ===
+const assert = require('assert');
+
+// You can import and use all API from the 'vscode' module
+// as well as import your extension to test it
+const vscode = require('vscode');
+// const myExtension = require('../extension');
+
+suite('Extension Test Suite', () => {
+	vscode.window.showInformationMessage('Start all tests.');
+
+	test('Sample test', () => {
+		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
+		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
+	});
+});
+
+
+=== FILE: test-workspace/.flattened/flattened.txt ===
+{
+  "summary": {
+    "totalFiles": 13,
+    "totalSize": "165.16 KB",
+    "errors": 0
+  },
+  "largestFiles": [
+    {
+      "path": "/Users/ericspencer/GitHub/flatten-repo/test-workspace/package-lock.json",
+      "size": "154.57 KB"
+    },
+    {
+      "path": "/Users/ericspencer/GitHub/flatten-repo/test-workspace/12:38,4-May-25_1.txt",
+      "size": "3.53 KB"
+    },
+    {
+      "path": "/Users/ericspencer/GitHub/flatten-repo/test-workspace/analyze.js",
+      "size": "2.76 KB"
+    },
+    {
+      "path": "/Users/ericspencer/GitHub/flatten-repo/test-workspace/.flatten_ignore",
+      "size": "1.34 KB"
+    },
+    {
+      "path": "/Users/ericspencer/GitHub/flatten-repo/test-workspace/src/main.js",
+      "size": "0.56 KB"
+    }
+  ],
+  "errors": []
+}
+
+=== FILE: test-workspace/12:38,4-May-25_1.txt ===
+=== Directory Tree ===
+├─ 12:38,4-May-25_1.txt
+├─ README.md
+├─ src
+│  ├─ index.js
+│  └─ test.js
+└─ test
+   └─ test.js
+
+
+
+
+=== FILE: src/index.js ===
+/**
+ * Main application entry point
+ */
+function main() {
+  console.log('Hello, World!');
+  return 42;
+}
+
+// Export the main function
+module.exports = main;
+
+
+=== FILE: src/test.js ===
+function test() { return true; }
+
+
+=== FILE: 12:38,4-May-25_1.txt ===
+=== Directory Tree ===
+├─ flattened
+│  └─ 12:37,4-May-25_1.txt
+├─ README.md
+├─ src
+│  ├─ index.js
+│  └─ test.js
+└─ test
+   └─ test.js
+
+
+
+
+=== FILE: src/index.js ===
+/**
+ * Main application entry point
+ */
+function main() {
+  console.log('Hello, World!');
+  return 42;
+}
+
+// Export the main function
+module.exports = main;
+
+
+=== FILE: src/test.js ===
+function test() { return true; }
+
+
+=== FILE: README.md ===
+# Test Workspace
+
+This is a test workspace for the flatten-repo extension.
+
+## Structure
+
+- `src/` - Source code
+- `test/` - Test files
+- `docs/` - Documentation
+- `node_modules/` - Dependencies
+
+## Files
+
+- `src/index.js` - Main application entry point
+- `test/test.js` - Test file for the main application
+- `README.md` - This file
+
+## Purpose
+
+This workspace is used to test the flatten-repo extension's functionality, including:
+- File flattening
+- Ignore patterns
+- Token limits
+- Output formatting 
+
+=== FILE: flattened/12:37,4-May-25_1.txt ===
+=== Directory Tree ===
+├─ README.md
+├─ src
+│  ├─ index.js
+│  └─ test.js
+└─ test
+   └─ test.js
+
+
+
+
+=== FILE: README.md ===
+# Test Workspace
+
+This is a test workspace for the flatten-repo extension.
+
+## Structure
+
+- `src/` - Source code
+- `test/` - Test files
+- `docs/` - Documentation
+- `node_modules/` - Dependencies
+
+## Files
+
+- `src/index.js` - Main application entry point
+- `test/test.js` - Test file for the main application
+- `README.md` - This file
+
+## Purpose
+
+This workspace is used to test the flatten-repo extension's functionality, including:
+- File flattening
+- Ignore patterns
+- Token limits
+- Output formatting 
+
+=== FILE: src/index.js ===
+/**
+ * Main application entry point
+ */
+function main() {
+  console.log('Hello, World!');
+  return 42;
+}
+
+// Export the main function
+module.exports = main;
+
+
+=== FILE: src/test.js ===
+function test() { return true; }
+
+
+=== FILE: test/test.js ===
+/**
+ * Test file for the main application
+ */
+const main = require('../src/index');
+
+describe('Main Application', () => {
+  it('should return 42', () => {
+    const result = main();
+    expect(result).toBe(42);
+  });
+}); 
+
+=== FILE: test/test.js ===
+/**
+ * Test file for the main application
+ */
+const main = require('../src/index');
+
+describe('Main Application', () => {
+  it('should return 42', () => {
+    const result = main();
+    expect(result).toBe(42);
+  });
+}); 
+
+=== FILE: README.md ===
+# Test Workspace
+
+This is a test workspace for the flatten-repo extension.
+
+## Structure
+
+- `src/` - Source code
+- `test/` - Test files
+- `docs/` - Documentation
+- `node_modules/` - Dependencies
+
+## Files
+
+- `src/index.js` - Main application entry point
+- `test/test.js` - Test file for the main application
+- `README.md` - This file
+
+## Purpose
+
+This workspace is used to test the flatten-repo extension's functionality, including:
+- File flattening
+- Ignore patterns
+- Token limits
+- Output formatting 
+
+=== FILE: test/test.js ===
+/**
+ * Test file for the main application
+ */
+const main = require('../src/index');
+
+describe('Main Application', () => {
+  it('should return 42', () => {
+    const result = main();
+    expect(result).toBe(42);
+  });
+}); 
+
+=== FILE: test-workspace/README.md ===
+# Test Workspace
+
+This is a test workspace for the flatten-repo extension.
+
+## Structure
+
+- `src/` - Source code
+- `test/` - Test files
+- `docs/` - Documentation
+- `node_modules/` - Dependencies
+
+## Files
+
+- `src/index.js` - Main application entry point
+- `test/test.js` - Test file for the main application
+- `README.md` - This file
+
+## Purpose
+
+This workspace is used to test the flatten-repo extension's functionality, including:
+- File flattening
+- Ignore patterns
+- Token limits
+- Output formatting 
+
+=== FILE: test-workspace/docs/README.md ===
+# Test Workspace Documentation
+
+This is a test workspace for the flatten-repo extension.
+
+## Project Structure
+
+- `src/` - Source code
+  - `main.js` - Main application entry point
+- `test/` - Test files
+  - `main.test.js` - Test suite
+- `docs/` - Documentation
+  - `README.md` - This file
+- `node_modules/` - Dependencies
+- `dist/` - Build output
+- `build/` - Build artifacts
+
+## Features
+
+- File processing
+- Configuration management
+- Test coverage
+- Documentation
+
+## Usage
+
+1. Install dependencies
+2. Run tests
+3. Build project
+4. Run application 
+
+=== FILE: test-workspace/test/main.test.js ===
+/**
+ * Test suite for main application
+ */
+
+const main = require('../src/main');
+
+describe('Main Application', () => {
+  it('should return 42', () => {
+    const result = main();
+    expect(result).toBe(42);
+  });
+
+  it('should handle file processing', () => {
+    // Test file processing logic
+    expect(true).toBe(true);
+  });
+}); 
+
+=== FILE: test-workspace/test/test.js ===
+/**
+ * Test file for the main application
+ */
+const main = require('../src/index');
+
+describe('Main Application', () => {
+  it('should return 42', () => {
+    const result = main();
+    expect(result).toBe(42);
+  });
+}); 

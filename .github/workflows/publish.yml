@@ -1,5 +1,5 @@
 # .github/workflows/publish.yml
-name: Publish Extension
+name: Status Check
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  publish:
+  status:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,10 +23,12 @@ jobs:
       - name: Run tests
         run: npm test
         
-      - name: Package extension
-        run: npm run package
-        
-      - name: Publish extension
-        run: npm run publish
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      - name: Update status badge
+        run: |
+          echo "✅ All checks passed"
+          echo "::set-output name=status::success"
+        id: status
+      
+      - name: Show status
+        run: |
+          echo "Status: ${{ steps.status.outputs.status }}"

@@ -1,5 +1,7 @@
 # Flatten Repository
 
+![Status](https://github.com/EricSpencer00/flatten-repo/workflows/Status%20Check/badge.svg)
+
 A VS Code extension that helps you flatten your codebase into a single file for easy sharing and analysis.
 
 ## Features
