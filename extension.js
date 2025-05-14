@@ -354,126 +354,219 @@ async function ensureSingleFileOutput(files, maxChunkSize) {
  * Common library and build tool patterns that should be ignored by default
  */
 const DEFAULT_LIBRARY_PATTERNS = [
-  // Package managers and dependencies
-  '**/node_modules/**',
-  '**/bower_components/**',
-  '**/jspm_packages/**',
-  '**/package-lock.json',
-  '**/yarn.lock',
-  '**/pnpm-lock.yaml',
-  '**/composer.lock',
-  '**/Gemfile.lock',
-  '**/poetry.lock',
-  '**/requirements.txt',
-  '**/go.sum',
-  '**/Cargo.lock',
-  '**/vendor/**',
-  
-  // Build outputs and caches
+  // Generated code patterns - catch any framework's generated files
+  '**/generated/**',
+  '**/.generated/**',
+  '**/auto-generated/**',
   '**/dist/**',
   '**/build/**',
   '**/out/**',
   '**/output/**',
-  '**/.next/**',
-  '**/.nuxt/**',
-  '**/.cache/**',
-  '**/coverage/**',
-  '**/.nyc_output/**',
-  
-  // Python
-  '**/__pycache__/**',
-  '**/*.pyc',
-  '**/*.pyo',
-  '**/*.pyd',
-  '**/venv/**',
-  '**/.env/**',
-  '**/.pytest_cache/**',
-  '**/.tox/**',
-  '**/*.egg-info/**',
-  
-  // Java/Kotlin/Scala
   '**/target/**',
-  '**/.gradle/**',
-  '**/gradle/**',
-  '**/*.class',
-  '**/classes/**',
-  '**/META-INF/**',
+  '**/_build/**',
+  '**/compiled/**',
+  '**/transpiled/**',
+  '**/bundles/**',
+  '**/releases/**',
+  '**/public/assets/**',
+  '**/public/static/**',
+  '**/static/generated/**',
+  '**/lib/generated/**',
+  '**/src/generated/**',
+  '**/gen/**',
+  '**/gen-*/**',
+  '**/*.generated.*',
+  '**/*-generated.*',
+  '**/*.gen.*',
+  '**/*.g.*',
   
-  // .NET
-  '**/bin/**',
-  '**/obj/**',
+  // Library and dependency directories
+  '**/node_modules/**',
+  '**/bower_components/**',
+  '**/vendor/**',
+  '**/third-party/**',
+  '**/external/**',
+  '**/deps/**',
   '**/packages/**',
+  '**/lib/vendor/**',
+  '**/assets/vendor/**',
+  '**/externals/**',
+  '**/dependencies/**',
+  
+  // Common build artifacts and intermediates
+  '**/intermediates/**',
+  '**/temp/**',
+  '**/tmp/**',
+  '**/.tmp/**',
+  '**/cache/**',
+  '**/.cache/**',
+  '**/artifacts/**',
+  '**/obj/**',
+  '**/bin/**',
   '**/Debug/**',
   '**/Release/**',
+  '**/x64/**',
+  '**/x86/**',
+  '**/arm64/**',
+  '**/publish/**',
   
-  // iOS/macOS
-  '**/Pods/**',
-  '**/*.xcworkspace/**',
-  '**/*.xcodeproj/**',
-  '**/DerivedData/**',
+  // Framework agnostic build/bundle files
+  '**/*.min.js',
+  '**/*.min.css',
+  '**/*.bundle.*',
+  '**/*.chunk.*',
+  '**/*.umd.*',
+  '**/*.esm.*',
+  '**/*.cjs.*',
+  '**/*.module.*',
+  '**/*.compiled.*',
+  '**/*.transpiled.*',
+  '**/*.optimized.*',
+  '**/*.processed.*',
+  '**/*.map',
+  
+  // Common configuration files
+  '**/*config.*',
+  '**/*conf.*',
+  '**/*.config.js',
+  '**/*.config.ts',
+  '**/*.config.json',
+  '**/*.conf.js',
+  '**/*.conf.ts',
+  '**/*.conf.json',
+  '**/.*rc',
+  '**/.*rc.js',
+  '**/.*rc.json',
+  '**/.*rc.yaml',
+  '**/.*rc.yml',
+  
+  // Lock files and dependency management
+  '**/package-lock.json',
+  '**/yarn.lock',
+  '**/pnpm-lock.yaml',
+  '**/*-lock.*',
+  '**/*.lock',
+  '**/requirements.txt',
+  '**/requirements/*.txt',
+  '**/deps.ts',
+  '**/deps.js',
+  '**/dependencies.xml',
+  
+  // Type definitions and declarations
+  '**/*.d.ts',
+  '**/@types/**',
+  '**/typings/**',
+  '**/types/**',
+  '**/type-definitions/**',
+  '**/definitions/**',
+  '**/*.types.*',
+  '**/*-types.*',
+  '**/*-typings.*',
+  '**/type-declarations/**',
+  
+  // Common test and development files
+  '**/test/**',
+  '**/tests/**',
+  '**/spec/**',
+  '**/specs/**',
+  '**/__tests__/**',
+  '**/__mocks__/**',
+  '**/__snapshots__/**',
+  '**/test-*/**',
+  '**/testing/**',
+  '**/e2e/**',
+  '**/integration/**',
+  '**/fixtures/**',
+  '**/mocks/**',
+  '**/stubs/**',
+  '**/*.test.*',
+  '**/*.spec.*',
+  '**/*.e2e.*',
+  '**/*.fixture.*',
+  '**/*.mock.*',
+  '**/*.stub.*',
+  
+  // Documentation
+  '**/docs/**',
+  '**/doc/**',
+  '**/documentation/**',
+  '**/api-docs/**',
+  '**/api-documentation/**',
+  '**/reference/**',
+  '**/guides/**',
+  '**/examples/**',
+  '**/demo/**',
+  '**/samples/**',
   
   // IDE and editor files
   '**/.idea/**',
   '**/.vscode/**',
   '**/.vs/**',
-  '**/.project/**',
+  '**/.eclipse/**',
   '**/.settings/**',
+  '**/.project',
   '**/.classpath',
   '**/.factorypath',
-  
-  // Minified files and source maps
-  '**/*.min.js',
-  '**/*.min.css',
-  '**/*.map',
-  '**/*.bundle.*',
-  '**/*.chunk.*',
-  
-  // Generated documentation
-  '**/docs/api/**',
-  '**/docs/generated/**',
-  '**/api-docs/**',
-  '**/jsdoc/**',
-  '**/javadoc/**',
-  '**/swagger/**',
-  
-  // Common test fixtures and mocks
-  '**/fixtures/**',
-  '**/mocks/**',
-  '**/stubs/**',
-  '**/test-data/**',
-  '**/test-utils/**',
-  '**/testing-utils/**',
-  
-  // Common third-party code directories
-  '**/third-party/**',
-  '**/external/**',
-  '**/deps/**',
-  '**/lib/vendor/**',
-  '**/assets/vendor/**',
-  
-  // Temporary and backup files
-  '**/*.tmp',
-  '**/*.temp',
-  '**/*.bak',
-  '**/*.log',
-  '**/tmp/**',
-  '**/temp/**',
-  '**/logs/**',
+  '**/*.sublime-*',
+  '**/*.iml',
+  '**/*.ipr',
+  '**/*.iws',
   
   // Version control
   '**/.git/**',
   '**/.svn/**',
   '**/.hg/**',
+  '**/.github/**',
+  '**/.gitlab/**',
+  '**/.bzr/**',
   
-  // Configuration files that often contain third-party settings
-  '**/webpack.config.*',
-  '**/babel.config.*',
-  '**/tsconfig.*',
-  '**/jest.config.*',
-  '**/karma.conf.*',
-  '**/rollup.config.*',
-  '**/grunt*',
-  '**/gulpfile.*'
+  // Temporary and backup files
+  '**/*~',
+  '**/*.bak',
+  '**/*.backup',
+  '**/*.old',
+  '**/*.orig',
+  '**/*.swp',
+  '**/*.tmp',
+  '**/*.temp',
+  '**/Thumbs.db',
+  '**/.DS_Store',
+  
+  // Common resource directories
+  '**/resources/static/**',
+  '**/resources/public/**',
+  '**/resources/assets/**',
+  '**/assets/generated/**',
+  '**/static/generated/**',
+  '**/public/generated/**',
+  '**/resources/generated/**',
+  '**/assets/compiled/**',
+  '**/static/compiled/**',
+  '**/public/compiled/**',
+  
+  // Common metadata and manifest files
+  '**/META-INF/**',
+  '**/WEB-INF/**',
+  '**/MANIFEST.MF',
+  '**/manifest.*',
+  '**/manifest-*.json',
+  '**/asset-manifest.*',
+  '**/resource-manifest.*',
+  '**/build-manifest.*',
+  
+  // Logs and reports
+  '**/logs/**',
+  '**/log/**',
+  '**/reports/**',
+  '**/report/**',
+  '**/coverage/**',
+  '**/.coverage/**',
+  '**/coverage-*/**',
+  '**/htmlcov/**',
+  '**/*.log',
+  '**/*.log.*',
+  '**/report.*',
+  '**/reports.*'
 ];
 
 /**
@@ -564,36 +657,42 @@ function processContentEfficiently(content, maxChunkSize) {
 }
 
 /**
- * Memory-efficient chunk creation
+ * Memory-efficient chunk creation that ensures single file output
  * @param {Array<{rel: string, content: string}>} files 
  * @param {number} maxChunkSize 
  * @returns {Array<{content: string, files: string[]}>}
  */
 function createChunksEfficiently(files, maxChunkSize) {
-  const chunks = [];
-  let currentChunk = { content: '', files: [] };
+  // Set hard limit for single file (Claude 3 Sonnet/GPT-4 Turbo compatible)
+  const HARD_LIMIT = 512 * 1024; // ~128K tokens
+  
+  let totalContent = '';
+  const includedFiles = [];
+  const skippedFiles = [];
   
   for (const { rel, content } of files) {
-    const processedContent = processContentEfficiently(content, maxChunkSize);
-    const fileEntry = `\n\n=== FILE: ${rel} ===\n${processedContent}`;
+    const fileEntry = `\n\n=== FILE: ${rel} ===\n${content}`;
     
-    // If adding this file would exceed chunk size, create new chunk
-    if ((currentChunk.content.length + fileEntry.length) > maxChunkSize) {
-      if (currentChunk.content) {
-        chunks.push(currentChunk);
-      }
-      currentChunk = { content: fileEntry, files: [rel] };
-    } else {
-      currentChunk.content += fileEntry;
-      currentChunk.files.push(rel);
+    // If adding this file would exceed the hard limit, skip it
+    if ((totalContent.length + fileEntry.length) > HARD_LIMIT) {
+      skippedFiles.push(rel);
+      continue;
     }
+    
+    totalContent += fileEntry;
+    includedFiles.push(rel);
   }
   
-  if (currentChunk.content) {
-    chunks.push(currentChunk);
+  // If we skipped files, add a warning message
+  if (skippedFiles.length > 0) {
+    const warningMessage = `\n\n=== WARNING: CONTENT TRUNCATED ===\nThe following ${skippedFiles.length} files were skipped to stay within LLM token limits:\n${skippedFiles.join('\n')}\n`;
+    totalContent = warningMessage + totalContent;
   }
   
-  return chunks;
+  return [{
+    content: totalContent,
+    files: includedFiles
+  }];
 }
 
 // ----- Main Extension Code -----
@@ -659,31 +758,209 @@ async function activate(context) {
 # Global Ignore Patterns:
 # These patterns are always ignored, regardless of other settings
 global:
-# Build and dependency directories
-node_modules
-bower_components
-vendor
-dist
-build
-out
-target
-tmp
-temp
-.cache
-__pycache__
-.git
-.vscode
-.idea
-.pnp
-.jest
-.mocha
-.nyc_output
-test-results
-reports
-.gradle
-android
-ios
-# Package manager files
+# Generated code and build artifacts
+generated/**
+dist/**
+build/**
+out/**
+target/**
+.next/**
+.nuxt/**
+output/**
+jar-resources/**
+flow-generated/**
+flow/generated/**
+vaadin-dev-tools/**
+
+# Package managers and dependencies
+node_modules/**
+bower_components/**
+jspm_packages/**
+vendor/**
+
+# Build configuration
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+composer.lock
+Gemfile.lock
+poetry.lock
+requirements.txt
+go.sum
+Cargo.lock
+pom.xml
+build.gradle
+gradle.properties
+*.config.js
+*.config.ts
+tsconfig*.json
+webpack*.js
+rollup*.js
+vite*.js
+vite*.ts
+
+# Framework-specific
+vaadin-*.js
+vaadin-*.ts
+vaadin/*.js
+vaadin/*.ts
+flow/*.js
+flow/*.ts
+flow-component-*.js
+flow-component-*.ts
+generated-flow-*.js
+generated-flow-*.ts
+
+# Type definitions
+*.d.ts
+types.ts
+types/*.ts
+typings/*.ts
+
+# Cache and temporary
+.cache/**
+tmp/**
+temp/**
+coverage/**
+.nyc_output/**
+
+# IDE and editor
+.idea/**
+.vscode/**
+.vs/**
+.project/**
+.settings/**
+.classpath
+.factorypath
+
+# Version control
+.git/**
+.svn/**
+.hg/**
+.github/**
+
+# Test and example files
+test/**
+tests/**
+spec/**
+specs/**
+__tests__/**
+__mocks__/**
+fixtures/**
+mocks/**
+stubs/**
+test-data/**
+test-utils/**
+testing-utils/**
+e2e/**
+*.test.*
+*.spec.*
+examples/**
+example/**
+demo/**
+demos/**
+samples/**
+
+# --------------------------
+# Local Whitelist Patterns:
+# These patterns are always included, even if they match global ignore patterns
+whitelist:
+# Core application code
+src/main/java/**/*.java
+src/main/kotlin/**/*.kt
+src/main/scala/**/*.scala
+src/main/python/**/*.py
+src/main/js/**/*.js
+src/main/ts/**/*.ts
+src/main/jsx/**/*.jsx
+src/main/tsx/**/*.tsx
+
+# Important configuration that should be included
+README.md
+CONTRIBUTING.md
+LICENSE
+# --------------------------
+# Local Blacklist Patterns:
+# These patterns are ignored in addition to global patterns
+blacklist:
+# Add any additional patterns specific to your project
+
+# --------------------------
+# Settings:
+# Configure token limits and other processing options
+settings:
+# Token limits for different LLMs (characters, ~4 chars per token):
+# - Claude 3 Opus: ~800K chars (200K tokens)
+# - Claude 3 Sonnet: ~512K chars (128K tokens) [DEFAULT]
+# - GPT-4 Turbo: ~512K chars (128K tokens)
+# - Claude 2: ~400K chars (100K tokens)
+# - GPT-4: ~128K chars (32K tokens)
+# - GPT-3.5 Turbo: ~64K chars (16K tokens)
+maxTokenLimit: 128000
+maxTokensPerFile: 25000
+# Processing options
+useGitIgnore: true
+maxConcurrentFiles: 4
+`;
+
+    await ensureFile(flattenIgnorePath, defaultIgnoreContent);
+    
+    // Open the file in the editor
+    const doc = await vscode.workspace.openTextDocument(flattenIgnorePath);
+    await vscode.window.showTextDocument(doc);
+  });
+
+  // Register the flatten repository command
+  let disposable = vscode.commands.registerCommand('flatten-repo.flattenProjectToTxt', async () => {
+    try {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders) {
+        throw new Error('No workspace folder is open');
+      }
+
+      const rootPath = workspaceFolders[0].uri.fsPath;
+      const flattenedDir = path.join(rootPath, 'flattened');
+      
+      // Create the flattened directory if it doesn't exist
+      try {
+        await fs.mkdir(flattenedDir, { recursive: true });
+      } catch (err) {
+        console.error(`Failed to create flattened directory: ${getDetailedErrorMessage(err)}`);
+        vscode.window.showErrorMessage(`Failed to create flattened directory: ${getDetailedErrorMessage(err)}`);
+        return;
+      }
+      
+      // Ensure the .flatten_ignore file exists
+      const flattenIgnorePath = path.join(flattenedDir, '.flatten_ignore');
+      const defaultIgnoreContent = `# .flatten_ignore
+# This file controls which files and directories are ignored or explicitly included during flattening.
+# Use glob patterns here. When a directory is specified without wildcards, it is automatically treated as "directory/**".
+#
+# --------------------------
+# Global Ignore Patterns:
+# These patterns are always ignored, regardless of other settings
+global:
+# Generated code and build artifacts
+generated/**
+dist/**
+build/**
+out/**
+target/**
+.next/**
+.nuxt/**
+output/**
+jar-resources/**
+flow-generated/**
+flow/generated/**
+vaadin-dev-tools/**
+
+# Package managers and dependencies
+node_modules/**
+bower_components/**
+jspm_packages/**
+vendor/**
+
+# Build configuration
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
@@ -736,78 +1013,103 @@ settings
 .classpath
 .factorypath
 # Version control
-.git
-.svn
-.hg
-# Temporary files
-*.tmp
-*.temp
-*.bak
-*.log
-logs
+.git/**
+.svn/**
+.hg/**
+.github/**
+
+# Test and example files
+test/**
+tests/**
+spec/**
+specs/**
+__tests__/**
+__mocks__/**
+fixtures/**
+mocks/**
+stubs/**
+test-data/**
+test-utils/**
+testing-utils/**
+e2e/**
+*.test.*
+*.spec.*
+examples/**
+example/**
+demo/**
+demos/**
+samples/**
+
 # --------------------------
 # Local Whitelist Patterns:
 # These patterns are always included, even if they match global ignore patterns
 whitelist:
-# Example:
-# src/**
-# lib/**/*.js
+# Core application code
+src/main/java/**/*.java
+src/main/kotlin/**/*.kt
+src/main/scala/**/*.scala
+src/main/python/**/*.py
+src/main/js/**/*.js
+src/main/ts/**/*.ts
+src/main/jsx/**/*.jsx
+src/main/tsx/**/*.tsx
+
+# Important configuration that should be included
+README.md
+CONTRIBUTING.md
+LICENSE
 # --------------------------
 # Local Blacklist Patterns:
 # These patterns are ignored in addition to global patterns
 blacklist:
-# Example:
-# test/**
-# *.spec.js
+# Add any additional patterns specific to your project
+
 # --------------------------
 # Settings:
 # Configure token limits and other processing options
 settings:
-# Token limits for different LLMs:
-# - Claude 3.7: 128k tokens
-# - ChatGPT 4o: 128k tokens
-# - ChatGPT o3-mini-high: 200k tokens
-# - Claude 2: 100k tokens
-# - Anthropic Claude 3 Opus: 200k tokens
-# - Cohere Command: 32k tokens
-# - Google PaLM 2: 8k tokens
-# - Meta LLaMA 2: 4k tokens
-maxTokenLimit: 50000
+# Token limits for different LLMs (characters, ~4 chars per token):
+# - Claude 3 Opus: ~800K chars (200K tokens)
+# - Claude 3 Sonnet: ~512K chars (128K tokens) [DEFAULT]
+# - GPT-4 Turbo: ~512K chars (128K tokens)
+# - Claude 2: ~400K chars (100K tokens)
+# - GPT-4: ~128K chars (32K tokens)
+# - GPT-3.5 Turbo: ~64K chars (16K tokens)
+maxTokenLimit: 128000
 maxTokensPerFile: 25000
 # Processing options
 useGitIgnore: true
 maxConcurrentFiles: 4
 `;
 
-    await ensureFile(flattenIgnorePath, defaultIgnoreContent);
-    
-    // Open the file in the editor
-    const doc = await vscode.workspace.openTextDocument(flattenIgnorePath);
-    await vscode.window.showTextDocument(doc);
-  });
-
-  let disposable = vscode.commands.registerCommand('flatten-repo.flattenProjectToTxt', async () => {
-    try {
-      const workspaceFolders = vscode.workspace.workspaceFolders;
-      if (!workspaceFolders) {
-        throw new Error('No workspace folder is open');
+      try {
+        await ensureFile(flattenIgnorePath, defaultIgnoreContent);
+      } catch (err) {
+        console.error(`Failed to create .flatten_ignore file: ${getDetailedErrorMessage(err)}`);
+        vscode.window.showErrorMessage(`Failed to create .flatten_ignore file: ${getDetailedErrorMessage(err)}`);
+        // Continue with default ignore patterns
       }
-
-      const rootPath = workspaceFolders[0].uri.fsPath;
-      const flattenedDir = path.join(rootPath, 'flattened');
-      await fs.mkdir(flattenedDir, { recursive: true });
       
       const config = vscode.workspace.getConfiguration('flattenRepo');
       
-      // Validate configuration
-      if (!Array.isArray(config.get('includeExtensions'))) {
-        throw new Error('Invalid configuration: includeExtensions must be an array');
-      }
-      if (!Array.isArray(config.get('ignoreDirs'))) {
-        throw new Error('Invalid configuration: ignoreDirs must be an array');
-      }
-      if (typeof config.get('useGitIgnore') !== 'boolean') {
-        throw new Error('Invalid configuration: useGitIgnore must be a boolean');
+      // Validate configuration with defaults if invalid
+      let includeExtensions = ['.js', '.jsx', '.ts', '.tsx', '.py', '.html', '.css'];
+      let ignoreDirs = [];
+      let useGitIgnore = true;
+      
+      try {
+        if (Array.isArray(config.get('includeExtensions'))) {
+          includeExtensions = config.get('includeExtensions');
+        }
+        if (Array.isArray(config.get('ignoreDirs'))) {
+          ignoreDirs = config.get('ignoreDirs');
+        }
+        if (typeof config.get('useGitIgnore') === 'boolean') {
+          useGitIgnore = config.get('useGitIgnore');
+        }
+      } catch (err) {
+        console.error(`Invalid configuration: ${getDetailedErrorMessage(err)}`);
+        vscode.window.showWarningMessage('Using default configuration due to invalid settings.');
       }
 
       await vscode.window.withProgress({
@@ -821,14 +1123,17 @@ maxConcurrentFiles: 4
             throw new Error('Operation cancelled by user');
           });
           
-          // Get configuration and settings
-          const includeExtensions = config.get('includeExtensions', ['.js', '.jsx', '.ts', '.tsx', '.py', '.html', '.css']);
-          
           // Get ignore rules including default library patterns
-          const ignoreRules = await parseFlattenIgnore(
-            path.join(flattenedDir, '.flatten_ignore'),
-            rootPath
-          );
+          let ignoreRules = { global: [], whitelist: [], blacklist: [], settings: {} };
+          try {
+            ignoreRules = await parseFlattenIgnore(
+              flattenIgnorePath,
+              rootPath
+            );
+          } catch (err) {
+            console.error(`Failed to parse .flatten_ignore file: ${getDetailedErrorMessage(err)}`);
+            vscode.window.showWarningMessage('Using default ignore patterns due to error parsing .flatten_ignore file.');
+          }
           
           // Convert patterns to regex once
           const globalRegexes = patternsToRegex(ignoreRules.global);
@@ -869,6 +1174,9 @@ maxConcurrentFiles: 4
               const fullPath = path.join(dir, item.name);
               const relative = path.relative(rootPath, fullPath);
               
+              // Skip the flattened directory itself
+              if (relative === 'flattened') continue;
+              
               // Check global patterns first
               if (globalRegexes.some(r => r.test(relative))) continue;
               
@@ -892,7 +1200,8 @@ maxConcurrentFiles: 4
           await collect(rootPath);
           
           if (fileList.length === 0) {
-            throw new Error('No matching files found. Check your ignore patterns and file extensions.');
+            vscode.window.showWarningMessage('No matching files found. Check your ignore patterns and file extensions.');
+            return;
           }
           
           // Score and sort files
@@ -903,82 +1212,102 @@ maxConcurrentFiles: 4
               throw new Error('Operation cancelled by user');
             }
             
-            const stats = await fs.stat(file);
-            const score = await scoreFile(file, stats);
-            scoredFiles.push({ file, score, size: stats.size });
+            try {
+              const stats = await fs.stat(file);
+              const score = await scoreFile(file, stats);
+              scoredFiles.push({ file, score, size: stats.size });
+            } catch (err) {
+              console.error(`Failed to process file ${file}: ${getDetailedErrorMessage(err)}`);
+              // Continue with other files
+            }
+          }
+          
+          if (scoredFiles.length === 0) {
+            vscode.window.showWarningMessage('No files could be processed. Check file permissions and try again.');
+            return;
           }
           
           // Sort by score descending
           scoredFiles.sort((a, b) => b.score - a.score);
           
-          // Estimate output files and ensure single file if possible
-          const { estimatedFiles, totalSize, suggestions } = await estimateOutputFiles(
-            scoredFiles,
-            maxChunkSize
-          );
-
-          // Show warning if multiple files would be created
-          if (estimatedFiles > 1) {
-            const message = suggestions.join('\n');
-            const PROCEED = 'Proceed anyway';
-            const OPTIMIZE = 'Optimize for single file';
-            const CANCEL = 'Cancel';
-            
-            const choice = await vscode.window.showWarningMessage(
-              message,
-              { modal: true },
-              PROCEED,
-              OPTIMIZE,
-              CANCEL
-            );
-            
-            if (choice === CANCEL || !choice) {
-              throw new Error('Operation cancelled by user');
-            }
-            
-            if (choice === OPTIMIZE) {
-              const result = await ensureSingleFileOutput(scoredFiles, maxChunkSize);
-              scoredFiles = result.files;
-              maxChunkSize = result.maxChunkSize;
-            }
-          }
-          
-          if (scoredFiles.length === 0) {
-            throw new Error('No files to process after filtering. Try adjusting your settings or using "Proceed with all files".');
-          }
-          
-          // Process files in batches
+          // Process files in batches with error handling
           tracker.increment('Processing files...');
-          const batchSize = 10;
-          const batches = [];
           const sortedFiles = scoredFiles.map(f => f.file);
           
-          const results = await processFilesInParallel(sortedFiles, rootPath, maxFileSize);
+          let results = [];
+          try {
+            results = await processFilesInParallel(sortedFiles, rootPath, maxFileSize);
+          } catch (err) {
+            console.error(`Error processing files: ${getDetailedErrorMessage(err)}`);
+            vscode.window.showWarningMessage('Some files could not be processed. Continuing with available content.');
+            
+            // Try to recover with a simpler approach if parallel processing fails
+            if (results.length === 0) {
+              for (const file of sortedFiles.slice(0, 100)) { // Limit to first 100 files as fallback
+                try {
+                  const stats = await fs.stat(file);
+                  if (stats.size <= maxFileSize) {
+                    const content = await fs.readFile(file, 'utf-8');
+                    const rel = path.relative(rootPath, file);
+                    results.push({ file, content, rel, stats });
+                  }
+                } catch (fileErr) {
+                  console.error(`Failed to read file ${file}: ${getDetailedErrorMessage(fileErr)}`);
+                  // Continue with other files
+                }
+              }
+            }
+          }
           
-          const chunks = createChunksEfficiently(results, maxChunkSize);
+          if (results.length === 0) {
+            vscode.window.showErrorMessage('Failed to process any files. Please check the console for errors.');
+            return;
+          }
+          
+          let chunks = [];
+          try {
+            chunks = createChunksEfficiently(results, maxChunkSize);
+          } catch (err) {
+            console.error(`Error creating chunks: ${getDetailedErrorMessage(err)}`);
+            
+            // Simple fallback chunking if the efficient method fails
+            const simpleChunk = {
+              content: results.map(r => `\n\n--- ${r.rel} ---\n\n${r.content}`).join('\n'),
+              files: results.map(r => r.rel)
+            };
+            chunks = [simpleChunk];
+          }
           
           if (chunks.length === 0) {
-            throw new Error('No output files created. All files may have been too large or filtered out.');
+            vscode.window.showErrorMessage('Failed to create output chunks. Please check the console for errors.');
+            return;
           }
           
-          // Write chunks to files
-          tracker.increment('Writing output files...');
+          // Write single file
+          tracker.increment('Writing output file...');
           const now = new Date();
-          const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-          const timestamp = `${now.getHours()}:${now.getMinutes()},${now.getDate()}-${monthNames[now.getMonth()]}-${String(now.getFullYear()).slice(-2)}`;
+          const timestamp = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getFullYear()).slice(-2)}`;
           
-          for (let i = 0; i < chunks.length; i++) {
-            if (token.isCancellationRequested) {
-              throw new Error('Operation cancelled by user');
-            }
-            
-            const treeString = buildDirectoryTree(chunks[i].files);
+          try {
+            const treeString = buildDirectoryTree(chunks[0].files);
             const header = `=== Directory Tree ===\n${treeString}\n\n`;
-            const filePath = path.join(flattenedDir, `${timestamp}_${i + 1}.txt`);
-            await fs.writeFile(filePath, header + chunks[i].content, 'utf-8');
+            const filePath = path.join(flattenedDir, `${timestamp}.txt`);
+            await fs.writeFile(filePath, header + chunks[0].content, 'utf-8');
+            
+            vscode.window.showInformationMessage(`✅ Flattened ${chunks[0].files.length} files into a single file in /flattened directory.`);
+            
+            // Open the file
+            try {
+              const doc = await vscode.workspace.openTextDocument(filePath);
+              await vscode.window.showTextDocument(doc);
+            } catch (err) {
+              console.error(`Failed to open output file: ${getDetailedErrorMessage(err)}`);
+            }
+          } catch (writeErr) {
+            console.error(`Failed to write output file: ${getDetailedErrorMessage(writeErr)}`);
+            vscode.window.showErrorMessage('Failed to write output file. Please check the console for errors.');
+            return;
           }
-          
-          vscode.window.showInformationMessage(`✅ Flattened ${fileList.length} files into ${chunks.length} file(s) in /flattened directory.`);
           
           // Update .gitignore
           const gitignorePath = path.join(rootPath, '.gitignore');
@@ -1000,7 +1329,7 @@ maxConcurrentFiles: 4
         } catch (error) {
           const errorMessage = getDetailedErrorMessage(error);
           vscode.window.showErrorMessage(`Failed during operation: ${errorMessage}`);
-          throw error;
+          console.error(errorMessage);
         }
       });
     } catch (error) {
@@ -1010,6 +1339,7 @@ maxConcurrentFiles: 4
     }
   });
 
+  context.subscriptions.push(createIgnoreCmd);
   context.subscriptions.push(disposable);
 }
 
