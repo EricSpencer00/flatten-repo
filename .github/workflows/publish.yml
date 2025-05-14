@@ -1,5 +1,5 @@
 # .github/workflows/publish.yml
-name: Status Check
+name: Status Check and Publish
 
 on:
   push:
@@ -32,3 +32,11 @@ jobs:
       - name: Show status
         run: |
           echo "Status: ${{ steps.status.outputs.status }}"
+
+      - name: Publish to VS Code Marketplace
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          npm install -g @vscode/vsce
+          vsce publish -p ${{ secrets.VSCE_PAT }}
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}

@@ -2,33 +2,33 @@
 
 ![Status](https://github.com/EricSpencer00/flatten-repo/workflows/Status%20Check/badge.svg)
 
-A VS Code extension that helps you flatten your codebase into a single file for easy sharing and analysis.
+A VS Code extension that helps you flatten your codebase into a single file for easy sharing and analysis with LLMs (Large Language Models).
 
 ## Features
 
-- **Smart File Analysis**
-  - Detailed insights about your codebase
-  - File size visualization
-  - Smart suggestions for optimization
-  - Progress preview functionality
+- **Intelligent File Processing**
+  - Smart filtering of library code and generated files
+  - Automatic handling of common patterns across frameworks
+  - Configurable token limits for different LLMs
+  - Memory-efficient processing of large codebases
 
-- **Interactive Configuration**
-  - Guided setup for `.flatten_ignore`
-  - Custom configuration templates
-  - Version control integration
-  - Batch processing support
+- **Customizable Ignore Patterns**
+  - Built-in patterns for common libraries and generated code
+  - Easy-to-configure `.flatten_ignore` file
+  - Support for global, whitelist, and blacklist patterns
+  - Automatic directory pattern expansion
 
-- **File Processing**
-  - Smart file filtering
-  - Memory-efficient chunking
-  - Progress tracking
-  - Error recovery
+- **LLM-Optimized Output**
+  - Single file output with size limits for different LLMs
+  - Directory tree visualization
+  - Smart file prioritization
+  - Automatic token limit management
 
-- **Output Management**
-  - Single file output
-  - Size optimization
-  - Format preservation
-  - Documentation integration
+- **Developer Experience**
+  - Progress tracking with detailed status updates
+  - Error recovery and graceful fallbacks
+  - Configurable through VS Code settings
+  - Git integration
 
 ## Installation
 
@@ -42,45 +42,46 @@ A VS Code extension that helps you flatten your codebase into a single file for 
 1. Open your project in VS Code
 2. Press `Ctrl+Shift+P` to open the command palette
 3. Type "Flatten Repository" and select one of the commands:
-   - "Flatten Project to TXT"
-   - "Create/Edit .flatten_ignore File"
+   - "Flatten Project to TXT": Creates a flattened version of your codebase
+   - "Create/Edit .flatten_ignore File": Configure what files to include/exclude
 
 ## Configuration
 
-The extension can be configured through:
+### .flatten_ignore File
 
-1. `.flatten_ignore` file in your project root
-2. VS Code settings
-3. Command palette options
-
-### .flatten_ignore Example
+The `.flatten_ignore` file supports three types of patterns:
 
 ```ini
-# Global ignore patterns
-[global]
-node_modules/
-dist/
-build/
-.flattened/
+# Global ignore patterns (always ignored)
+global:
+node_modules/**
+dist/**
+build/**
+vendor/**
+/generated/**    # Root level generated files
+**/generated/**  # Any generated files
 
-# Local whitelist patterns
-[whitelist]
-src/main.js
-test/main.test.js
+# Whitelist patterns (always included)
+whitelist:
+src/**/*.java
+src/**/*.ts
+*.md
+*.json
 
-# Local blacklist patterns
-[blacklist]
-test/coverage/
-docs/api/
+# Blacklist patterns (additional ignores)
+blacklist:
+*.min.js
+*.min.css
+*.map
 
 # Settings
-[settings]
-maxTokenLimit=8000
-maxConcurrentFiles=10
-useGitIgnore=true
+settings:
+maxTokenLimit: 128000    # ~128K tokens (Claude/GPT-4)
+maxTokensPerFile: 25000
+useGitIgnore: true
 ```
 
-## VS Code Settings
+### VS Code Settings
 
 - `flattenRepo.includeExtensions`: File extensions to include
 - `flattenRepo.ignoreDirs`: Directory names to ignore
@@ -88,6 +89,16 @@ useGitIgnore=true
 - `flattenRepo.maxChunkSize`: Maximum characters per chunk
 - `flattenRepo.globalWhitelist`: Global include patterns
 - `flattenRepo.globalBlacklist`: Global exclude patterns
+
+## Token Limits
+
+The extension supports various LLM token limits:
+- Claude 3 Opus: ~200K tokens (800K chars)
+- Claude 3 Sonnet: ~128K tokens (512K chars) [DEFAULT]
+- GPT-4 Turbo: ~128K tokens (512K chars)
+- Claude 2: ~100K tokens (400K chars)
+- GPT-4: ~32K tokens (128K chars)
+- GPT-3.5 Turbo: ~16K tokens (64K chars)
 
 ## Contributing
 
@@ -107,4 +118,10 @@ MIT License - see [LICENSE](LICENSE) for details
 
 ## Version History
 
-See [CHANGELOG.md](CHANGELOG.md) for version history and changes.
+### 1.0.3
+- Added support for `/generated` directory ignore patterns
+- Improved whitelist pattern handling
+- Updated default ignore patterns
+- Enhanced LLM token limit documentation
+
+See [CHANGELOG.md](CHANGELOG.md) for full version history.

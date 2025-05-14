@@ -1,0 +1,82 @@
+# .flatten_ignore
+# This file controls which files and directories are ignored or explicitly included during flattening.
+# Use glob patterns here. When a directory is specified without wildcards, it is automatically treated as "directory/**".
+#
+# --------------------------
+# Global Ignore Patterns:
+# These patterns are always ignored, regardless of other settings
+global:
+# Package managers and dependencies
+node_modules/**
+bower_components/**
+vendor/**
+
+# Build and generated outputs
+dist/**
+build/**
+target/**
+/generated/**
+**/generated/**
+
+# IDE and editor
+.idea/**
+.vscode/**
+.vs/**
+
+# Version control
+.git/**
+.svn/**
+.hg/**
+
+# --------------------------
+# Local Whitelist Patterns:
+# These patterns are always included, even if they match global ignore patterns
+whitelist:
+# Core application code - include all source files
+src/**/*.java
+src/**/*.kt
+src/**/*.scala
+src/**/*.py
+src/**/*.js
+src/**/*.ts
+src/**/*.jsx
+src/**/*.tsx
+src/**/*.html
+src/**/*.css
+src/**/*.scss
+src/**/*.less
+
+# Important configuration and documentation
+*.md
+*.txt
+*.json
+*.yaml
+*.yml
+*.xml
+*.properties
+
+# --------------------------
+# Local Blacklist Patterns:
+# These patterns are ignored in addition to global patterns
+blacklist:
+# Minified files
+*.min.js
+*.min.css
+*.map
+
+# --------------------------
+# Settings:
+# Configure token limits and other processing options
+settings:
+# Token limits for different LLMs (characters, ~4 chars per token):
+# - Claude 3 Opus: ~800K chars (200K tokens)
+# - Claude 3 Sonnet: ~512K chars (128K tokens) [DEFAULT]
+# - GPT-4 Turbo: ~512K chars (128K tokens)
+# - Claude 2: ~400K chars (100K tokens)
+# - GPT-4: ~128K chars (32K tokens)
+# - GPT-3.5 Turbo: ~64K chars (16K tokens)
+maxTokenLimit: 128000
+maxTokensPerFile: 25000
+# Processing options
+useGitIgnore: true
+maxConcurrentFiles: 4 

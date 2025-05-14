@@ -354,219 +354,126 @@ async function ensureSingleFileOutput(files, maxChunkSize) {
  * Common library and build tool patterns that should be ignored by default
  */
 const DEFAULT_LIBRARY_PATTERNS = [
-  // Generated code patterns - catch any framework's generated files
-  '**/generated/**',
-  '**/.generated/**',
-  '**/auto-generated/**',
+  // Package managers and dependencies
+  '**/node_modules/**',
+  '**/bower_components/**',
+  '**/jspm_packages/**',
+  '**/package-lock.json',
+  '**/yarn.lock',
+  '**/pnpm-lock.yaml',
+  '**/composer.lock',
+  '**/Gemfile.lock',
+  '**/poetry.lock',
+  '**/requirements.txt',
+  '**/go.sum',
+  '**/Cargo.lock',
+  '**/vendor/**',
+  
+  // Build outputs and caches
   '**/dist/**',
   '**/build/**',
   '**/out/**',
   '**/output/**',
-  '**/target/**',
-  '**/_build/**',
-  '**/compiled/**',
-  '**/transpiled/**',
-  '**/bundles/**',
-  '**/releases/**',
-  '**/public/assets/**',
-  '**/public/static/**',
-  '**/static/generated/**',
-  '**/lib/generated/**',
-  '**/src/generated/**',
-  '**/gen/**',
-  '**/gen-*/**',
-  '**/*.generated.*',
-  '**/*-generated.*',
-  '**/*.gen.*',
-  '**/*.g.*',
-  
-  // Library and dependency directories
-  '**/node_modules/**',
-  '**/bower_components/**',
-  '**/vendor/**',
-  '**/third-party/**',
-  '**/external/**',
-  '**/deps/**',
-  '**/packages/**',
-  '**/lib/vendor/**',
-  '**/assets/vendor/**',
-  '**/externals/**',
-  '**/dependencies/**',
-  
-  // Common build artifacts and intermediates
-  '**/intermediates/**',
-  '**/temp/**',
-  '**/tmp/**',
-  '**/.tmp/**',
-  '**/cache/**',
+  '**/.next/**',
+  '**/.nuxt/**',
   '**/.cache/**',
-  '**/artifacts/**',
-  '**/obj/**',
+  '**/coverage/**',
+  '**/.nyc_output/**',
+  
+  // Python
+  '**/__pycache__/**',
+  '**/*.pyc',
+  '**/*.pyo',
+  '**/*.pyd',
+  '**/venv/**',
+  '**/.env/**',
+  '**/.pytest_cache/**',
+  '**/.tox/**',
+  '**/*.egg-info/**',
+  
+  // Java/Kotlin/Scala
+  '**/target/**',
+  '**/.gradle/**',
+  '**/gradle/**',
+  '**/*.class',
+  '**/classes/**',
+  '**/META-INF/**',
+  
+  // .NET
   '**/bin/**',
+  '**/obj/**',
+  '**/packages/**',
   '**/Debug/**',
   '**/Release/**',
-  '**/x64/**',
-  '**/x86/**',
-  '**/arm64/**',
-  '**/publish/**',
   
-  // Framework agnostic build/bundle files
-  '**/*.min.js',
-  '**/*.min.css',
-  '**/*.bundle.*',
-  '**/*.chunk.*',
-  '**/*.umd.*',
-  '**/*.esm.*',
-  '**/*.cjs.*',
-  '**/*.module.*',
-  '**/*.compiled.*',
-  '**/*.transpiled.*',
-  '**/*.optimized.*',
-  '**/*.processed.*',
-  '**/*.map',
-  
-  // Common configuration files
-  '**/*config.*',
-  '**/*conf.*',
-  '**/*.config.js',
-  '**/*.config.ts',
-  '**/*.config.json',
-  '**/*.conf.js',
-  '**/*.conf.ts',
-  '**/*.conf.json',
-  '**/.*rc',
-  '**/.*rc.js',
-  '**/.*rc.json',
-  '**/.*rc.yaml',
-  '**/.*rc.yml',
-  
-  // Lock files and dependency management
-  '**/package-lock.json',
-  '**/yarn.lock',
-  '**/pnpm-lock.yaml',
-  '**/*-lock.*',
-  '**/*.lock',
-  '**/requirements.txt',
-  '**/requirements/*.txt',
-  '**/deps.ts',
-  '**/deps.js',
-  '**/dependencies.xml',
-  
-  // Type definitions and declarations
-  '**/*.d.ts',
-  '**/@types/**',
-  '**/typings/**',
-  '**/types/**',
-  '**/type-definitions/**',
-  '**/definitions/**',
-  '**/*.types.*',
-  '**/*-types.*',
-  '**/*-typings.*',
-  '**/type-declarations/**',
-  
-  // Common test and development files
-  '**/test/**',
-  '**/tests/**',
-  '**/spec/**',
-  '**/specs/**',
-  '**/__tests__/**',
-  '**/__mocks__/**',
-  '**/__snapshots__/**',
-  '**/test-*/**',
-  '**/testing/**',
-  '**/e2e/**',
-  '**/integration/**',
-  '**/fixtures/**',
-  '**/mocks/**',
-  '**/stubs/**',
-  '**/*.test.*',
-  '**/*.spec.*',
-  '**/*.e2e.*',
-  '**/*.fixture.*',
-  '**/*.mock.*',
-  '**/*.stub.*',
-  
-  // Documentation
-  '**/docs/**',
-  '**/doc/**',
-  '**/documentation/**',
-  '**/api-docs/**',
-  '**/api-documentation/**',
-  '**/reference/**',
-  '**/guides/**',
-  '**/examples/**',
-  '**/demo/**',
-  '**/samples/**',
+  // iOS/macOS
+  '**/Pods/**',
+  '**/*.xcworkspace/**',
+  '**/*.xcodeproj/**',
+  '**/DerivedData/**',
   
   // IDE and editor files
   '**/.idea/**',
   '**/.vscode/**',
   '**/.vs/**',
-  '**/.eclipse/**',
+  '**/.project/**',
   '**/.settings/**',
-  '**/.project',
   '**/.classpath',
   '**/.factorypath',
-  '**/*.sublime-*',
-  '**/*.iml',
-  '**/*.ipr',
-  '**/*.iws',
+  
+  // Minified files and source maps
+  '**/*.min.js',
+  '**/*.min.css',
+  '**/*.map',
+  '**/*.bundle.*',
+  '**/*.chunk.*',
+  
+  // Generated documentation
+  '**/docs/api/**',
+  '**/docs/generated/**',
+  '**/api-docs/**',
+  '**/jsdoc/**',
+  '**/javadoc/**',
+  '**/swagger/**',
+  
+  // Common test fixtures and mocks
+  '**/fixtures/**',
+  '**/mocks/**',
+  '**/stubs/**',
+  '**/test-data/**',
+  '**/test-utils/**',
+  '**/testing-utils/**',
+  
+  // Common third-party code directories
+  '**/third-party/**',
+  '**/external/**',
+  '**/deps/**',
+  '**/lib/vendor/**',
+  '**/assets/vendor/**',
+  
+  // Temporary and backup files
+  '**/*.tmp',
+  '**/*.temp',
+  '**/*.bak',
+  '**/*.log',
+  '**/tmp/**',
+  '**/temp/**',
+  '**/logs/**',
   
   // Version control
   '**/.git/**',
   '**/.svn/**',
   '**/.hg/**',
-  '**/.github/**',
-  '**/.gitlab/**',
-  '**/.bzr/**',
   
-  // Temporary and backup files
-  '**/*~',
-  '**/*.bak',
-  '**/*.backup',
-  '**/*.old',
-  '**/*.orig',
-  '**/*.swp',
-  '**/*.tmp',
-  '**/*.temp',
-  '**/Thumbs.db',
-  '**/.DS_Store',
-  
-  // Common resource directories
-  '**/resources/static/**',
-  '**/resources/public/**',
-  '**/resources/assets/**',
-  '**/assets/generated/**',
-  '**/static/generated/**',
-  '**/public/generated/**',
-  '**/resources/generated/**',
-  '**/assets/compiled/**',
-  '**/static/compiled/**',
-  '**/public/compiled/**',
-  
-  // Common metadata and manifest files
-  '**/META-INF/**',
-  '**/WEB-INF/**',
-  '**/MANIFEST.MF',
-  '**/manifest.*',
-  '**/manifest-*.json',
-  '**/asset-manifest.*',
-  '**/resource-manifest.*',
-  '**/build-manifest.*',
-  
-  // Logs and reports
-  '**/logs/**',
-  '**/log/**',
-  '**/reports/**',
-  '**/report/**',
-  '**/coverage/**',
-  '**/.coverage/**',
-  '**/coverage-*/**',
-  '**/htmlcov/**',
-  '**/*.log',
-  '**/*.log.*',
-  '**/report.*',
-  '**/reports.*'
+  // Configuration files that often contain third-party settings
+  '**/webpack.config.*',
+  '**/babel.config.*',
+  '**/tsconfig.*',
+  '**/jest.config.*',
+  '**/karma.conf.*',
+  '**/rollup.config.*',
+  '**/grunt*',
+  '**/gulpfile.*'
 ];
 
 /**
@@ -758,27 +665,32 @@ async function activate(context) {
 # Global Ignore Patterns:
 # These patterns are always ignored, regardless of other settings
 global:
-# Generated code and build artifacts
-generated/**
-dist/**
-build/**
-out/**
-target/**
-.next/**
-.nuxt/**
-output/**
-jar-resources/**
-flow-generated/**
-flow/generated/**
-vaadin-dev-tools/**
-
-# Package managers and dependencies
-node_modules/**
-bower_components/**
-jspm_packages/**
-vendor/**
-
-# Build configuration
+# Build and dependency directories
+node_modules
+/generated/**
+bower_components
+vendor
+dist
+build
+out
+target
+tmp
+temp
+.cache
+__pycache__
+.git
+.vscode
+.idea
+.pnp
+.jest
+.mocha
+.nyc_output
+test-results
+reports
+.gradle
+android
+ios
+# Package manager files
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
@@ -788,103 +700,72 @@ poetry.lock
 requirements.txt
 go.sum
 Cargo.lock
-pom.xml
-build.gradle
-gradle.properties
-*.config.js
-*.config.ts
-tsconfig*.json
-webpack*.js
-rollup*.js
-vite*.js
-vite*.ts
-
-# Framework-specific
-vaadin-*.js
-vaadin-*.ts
-vaadin/*.js
-vaadin/*.ts
-flow/*.js
-flow/*.ts
-flow-component-*.js
-flow-component-*.ts
-generated-flow-*.js
-generated-flow-*.ts
-
-# Type definitions
-*.d.ts
-types.ts
-types/*.ts
-typings/*.ts
-
-# Cache and temporary
-.cache/**
-tmp/**
-temp/**
-coverage/**
-.nyc_output/**
-
-# IDE and editor
-.idea/**
-.vscode/**
-.vs/**
-.project/**
-.settings/**
+# Generated files
+*.min.js
+*.min.css
+*.map
+*.bundle.*
+*.chunk.*
+# Documentation
+docs/api
+docs/generated
+api-docs
+jsdoc
+javadoc
+swagger
+# Test and example files
+test
+tests
+spec
+__tests__
+__mocks__
+fixtures
+mocks
+stubs
+test-data
+test-utils
+testing-utils
+examples
+demo
+samples
+# Environment and configuration
+.env
+.env.*
+config
+configs
+settings
+# IDE and editor files
+.vscode
+.idea
+.vs
+.project
+.settings
 .classpath
 .factorypath
-
 # Version control
-.git/**
-.svn/**
-.hg/**
-.github/**
-
-# Test and example files
-test/**
-tests/**
-spec/**
-specs/**
-__tests__/**
-__mocks__/**
-fixtures/**
-mocks/**
-stubs/**
-test-data/**
-test-utils/**
-testing-utils/**
-e2e/**
-*.test.*
-*.spec.*
-examples/**
-example/**
-demo/**
-demos/**
-samples/**
-
+.git
+.svn
+.hg
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.log
+logs
 # --------------------------
 # Local Whitelist Patterns:
 # These patterns are always included, even if they match global ignore patterns
 whitelist:
-# Core application code
-src/main/java/**/*.java
-src/main/kotlin/**/*.kt
-src/main/scala/**/*.scala
-src/main/python/**/*.py
-src/main/js/**/*.js
-src/main/ts/**/*.ts
-src/main/jsx/**/*.jsx
-src/main/tsx/**/*.tsx
-
-# Important configuration that should be included
-README.md
-CONTRIBUTING.md
-LICENSE
+# Example:
+# src/**
+# lib/**/*.js
 # --------------------------
 # Local Blacklist Patterns:
 # These patterns are ignored in addition to global patterns
 blacklist:
-# Add any additional patterns specific to your project
-
+# Example:
+# test/**
+# *.spec.js
 # --------------------------
 # Settings:
 # Configure token limits and other processing options
@@ -940,27 +821,31 @@ maxConcurrentFiles: 4
 # Global Ignore Patterns:
 # These patterns are always ignored, regardless of other settings
 global:
-# Generated code and build artifacts
-generated/**
-dist/**
-build/**
-out/**
-target/**
-.next/**
-.nuxt/**
-output/**
-jar-resources/**
-flow-generated/**
-flow/generated/**
-vaadin-dev-tools/**
-
-# Package managers and dependencies
-node_modules/**
-bower_components/**
-jspm_packages/**
-vendor/**
-
-# Build configuration
+# Build and dependency directories
+node_modules
+bower_components
+vendor
+dist
+build
+out
+target
+tmp
+temp
+.cache
+__pycache__
+.git
+.vscode
+.idea
+.pnp
+.jest
+.mocha
+.nyc_output
+test-results
+reports
+.gradle
+android
+ios
+# Package manager files
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
@@ -1013,57 +898,29 @@ settings
 .classpath
 .factorypath
 # Version control
-.git/**
-.svn/**
-.hg/**
-.github/**
-
-# Test and example files
-test/**
-tests/**
-spec/**
-specs/**
-__tests__/**
-__mocks__/**
-fixtures/**
-mocks/**
-stubs/**
-test-data/**
-test-utils/**
-testing-utils/**
-e2e/**
-*.test.*
-*.spec.*
-examples/**
-example/**
-demo/**
-demos/**
-samples/**
-
+.git
+.svn
+.hg
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.log
+logs
 # --------------------------
 # Local Whitelist Patterns:
 # These patterns are always included, even if they match global ignore patterns
 whitelist:
-# Core application code
-src/main/java/**/*.java
-src/main/kotlin/**/*.kt
-src/main/scala/**/*.scala
-src/main/python/**/*.py
-src/main/js/**/*.js
-src/main/ts/**/*.ts
-src/main/jsx/**/*.jsx
-src/main/tsx/**/*.tsx
-
-# Important configuration that should be included
-README.md
-CONTRIBUTING.md
-LICENSE
+# Example:
+# src/**
+# lib/**/*.js
 # --------------------------
 # Local Blacklist Patterns:
 # These patterns are ignored in addition to global patterns
 blacklist:
-# Add any additional patterns specific to your project
-
+# Example:
+# test/**
+# *.spec.js
 # --------------------------
 # Settings:
 # Configure token limits and other processing options
