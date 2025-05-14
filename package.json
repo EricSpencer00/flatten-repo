@@ -3,7 +3,7 @@
   "name": "flatten-repo",
   "displayName": "Flatten Repository",
   "description": "Flatten your codebase into a single file for easy sharing and analysis",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "license": "MIT",
   "icon": "static/logo-optimized.png",
   "engines": {
